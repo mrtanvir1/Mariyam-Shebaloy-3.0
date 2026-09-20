@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mariyam Shebaloy • Final Fixed V6</title>
+<title>Mariyam Shebaloy • Final Fixed V9</title>
 <style>
 *{box-sizing:border-box}
 body{margin:0;font-family:Arial,"Noto Sans Bengali",sans-serif;background:#f4f7fb;color:#1f2937}
@@ -654,13 +654,11 @@ function openPatient(id){
   showPage("patientDetail");
 }
 function visitCard(p,v){
-  const investigations = Array.isArray(v.investigations) ? v.investigations : [];
   return `<div class="list-item">
     <div class="row"><b>${new Date(v.date).toLocaleString()}</b><span class="badge">${esc(v.diagnosis||"No diagnosis")}</span></div>
     <p><b>BP:</b> ${esc(v.bp||"-")} &nbsp; <b>Temp:</b> ${esc(v.temperature||"-")} &nbsp; <b>Weight:</b> ${esc(v.weight||"-")}</p>
     <p><b>Symptoms:</b> ${esc(v.symptoms||"-")}</p>
     ${v.medicines?.length ? "<b>Medicines:</b><ul>"+v.medicines.map(m=>`<li><b>${esc(m.name)} ${esc(m.strength)}</b> — ${esc(m.frequency||"-")} • ${esc(m.food||"-")} • ${esc(m.duration||"-")}</li>`).join("")+"</ul>":""}
-    ${investigations.length ? `<p><b>Investigations:</b> ${investigations.map(x=>`<span class="badge" style="margin:2px">${esc(x)}</span>`).join(" ")}</p>` : ""}
     <p><b>Advice:</b> ${esc(v.advice||"-")}</p>
     <button class="btn secondary" onclick="printPrescription('${p.id}','${v.id}')">🖨 Print</button>
   </div>`;
@@ -1786,6 +1784,6 @@ if ("serviceWorker" in navigator) {
   });
 }
 </script>
-  <script src="./v8-patch.js"></script>
+  <script src="./v8-patch.js?v=9.0.0"></script>
 </body>
 </html>

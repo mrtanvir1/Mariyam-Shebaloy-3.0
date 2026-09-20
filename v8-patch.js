@@ -12,6 +12,8 @@
   "use strict";
 
   const INVESTIGATION_SUGGESTIONS = [
+    "CBC",
+    "BC",
     "CBC / Complete Blood Count",
     "FBS",
     "RBS",
@@ -54,7 +56,6 @@
       .v8-section{margin-top:16px}
       .v8-invest-row{display:flex;gap:8px;align-items:center;margin:8px 0}
       .v8-invest-row input{flex:1}
-      .v8-investigation-open{width:100%;min-height:44px;text-align:left;font-weight:700}
       .v8-selected{margin-top:8px}
       .v8-chip{display:flex;justify-content:space-between;align-items:center;
         padding:9px 11px;border:1px solid #dbe4f0;border-radius:10px;
@@ -387,11 +388,6 @@
     clearV8("v");
     if (typeof fillDiseaseList === "function") fillDiseaseList();
     if (typeof showPage === "function") showPage("visitForm");
-    // Rebuild the investigation picker every time New Visit opens. This is important
-    // for Android Chrome/PWA where the form can be reused without a full page reload.
-    setTimeout(()=>{
-      try { installInvestigationPicker8(); } catch(e) { console.warn("Investigation picker:",e); }
-    },0);
   };
 
   // Override Save Visit: save only, never auto-print.
@@ -430,103 +426,103 @@
     if (typeof openPatient === "function") openPatient(p.id);
   };
 
-  // Prescription print layout: matches the supplied reference (teal clinic header,
-  // patient-information strip, left clinical column, Rx medicine table, investigation
-  // list and signature). It is rendered in the current PWA window to avoid popup blockers.
   window.printPrescription = function(patientId, visitId) {
     const p = (patients || []).find(x => x.id === patientId);
-    if (!p) { if (typeof toast === "function") toast("Patient পাওয়া যায়নি"); return; }
+    if (!p) { if(typeof toast==="function") toast("Patient পাওয়া যায়নি"); return; }
     const v = (p.visits || []).find(x => x.id === visitId);
-    if (!v) { if (typeof toast === "function") toast("Prescription পাওয়া যায়নি"); return; }
+    if (!v) { if(typeof toast==="function") toast("Prescription পাওয়া যায়নি"); return; }
 
     const pr = profile8();
-    const meds = Array.isArray(v.medicines) ? v.medicines : [];
-    const inv = Array.isArray(v.investigations) ? v.investigations : [];
-    const phone = [pr.phone1, pr.phone2].filter(Boolean).join(", ");
-    const food = x => translateFood8(x);
-    const dateText = new Date(v.date).toLocaleDateString(undefined,{day:"2-digit",month:"short",year:"numeric"});
+    const phones = [pr.phone1, pr.phone2].filter(Boolean).join(" , ");
+    const meds = v.medicines || [];
+    const inv = v.investigations || [];
 
-    const old = q("v8PrintOverlay"); if (old) old.remove();
-    const overlay = document.createElement("div");
-    overlay.id = "v8PrintOverlay";
-    overlay.innerHTML = `
-      <div class="rx-reference-sheet">
-        <div class="rx-top-line"></div>
-        <header class="rx-reference-header">
-          <div>
-            <div class="rx-doctor-name">${esc8(pr.name || "")}</div>
-            <div class="rx-doctor-degree">${esc8(pr.degree || "")}</div>
-            <div class="rx-doctor-meta">${esc8(phone)}</div>
-            <div class="rx-doctor-meta">${esc8(pr.address || "")}</div>
-          </div>
-          <div class="rx-clinic-head">
-            <div class="rx-clinic-name">${esc8(pr.clinic || "")}</div>
-            <div class="rx-date">Date: ${esc8(dateText)}</div>
-          </div>
-        </header>
+    const w = window.open("", "_blank", "noopener,noreferrer");
+    if (!w) {
+      if(typeof toast==="function") toast("Browser popup blocked. Allow popups.");
+      return;
+    }
 
-        <section class="rx-patient-section">
-          <div class="rx-section-title">PATIENT INFORMATION</div>
-          <div class="rx-patient-grid">
-            <div><span>নাম</span><b>${esc8(p.name || "-")}</b></div>
-            <div><span>বয়স</span><b>${esc8(p.age || "-")}</b></div>
-            <div><span>লিঙ্গ</span><b>${esc8(p.gender || "-")}</b></div>
-            <div><span>মোবাইল</span><b>${esc8(p.phone || "-")}</b></div>
-            <div><span>PATIENT ID</span><b>${esc8(p.id || "-")}</b></div>
-          </div>
-        </section>
+    w.document.write(`<!doctype html><html><head><meta charset="utf-8">
+      <title>Prescription - ${esc8(p.name)}</title>
+      <style>
+        body{margin:0;padding:28px;background:#fff;color:#172033;font-family:Arial,sans-serif}
+        .wrap{max-width:780px;margin:auto}
+        .head{border-bottom:3px solid #2563eb;padding-bottom:14px}
+        .clinic{font-size:27px;font-weight:800;color:#2563eb}
+        .doctor{font-size:18px;font-weight:700;margin-top:4px}
+        .meta{font-size:12px;color:#4b5563;margin-top:5px}
+        .patient{margin-top:18px;border:1px solid #dbe4f0;border-radius:10px;padding:12px}
+        .title{font-size:20px;font-weight:800;margin:18px 0 8px}
+        table{width:100%;border-collapse:collapse}
+        th,td{border-bottom:1px solid #e5e7eb;padding:9px;text-align:left;font-size:13px}
+        .box{border:1px solid #dbe4f0;border-radius:10px;padding:12px}
+        .rx{font-size:28px;font-weight:800;margin:18px 0 8px}
+        .follow{border-left:4px solid #2563eb;padding:10px 12px;background:#f5f9ff}
+        .sign{text-align:right;margin-top:55px}
+        @media print{body{padding:0}.no-print{display:none}}
+      </style></head><body>
+      <div class="wrap">
+        <div class="head">
+          <div class="clinic">${esc8(pr.clinic || "")}</div>
+          <div class="doctor">${esc8(pr.name || "")}</div>
+          <div class="meta">${esc8(pr.degree || "")}</div>
+          <div class="meta">${esc8(phones)}</div>
+          <div class="meta">${esc8(pr.address || "")}</div>
+        </div>
 
-        <main class="rx-main-grid">
-          <aside class="rx-sidebar">
-            <div class="rx-side-card"><div class="rx-side-title">CC – Chief Complaints</div><div class="rx-side-body">${esc8(v.symptoms || "-").replace(/\n/g,"<br>")}</div></div>
-            <div class="rx-side-card"><div class="rx-side-title">O/E – On Examination</div><div class="rx-vitals">
-              <div><span>BP</span><b>${esc8(v.bp || "-")}</b></div>
-              <div><span>Temp.</span><b>${esc8(v.temperature || "-")}</b></div>
-              <div><span>Weight</span><b>${esc8(v.weight || "-")}</b></div>
-              <div><span>Gender</span><b>${esc8(p.gender || "-")}</b></div>
-            </div></div>
-            <div class="rx-side-card"><div class="rx-side-title">Diagnosis</div><div class="rx-side-body">${esc8(v.diagnosis || "-")}</div></div>
-            <div class="rx-side-card"><div class="rx-side-title">Investigation</div><div class="rx-side-body">${inv.length ? inv.map(x=>`<div class="rx-invest-item">${esc8(x)}</div>`).join("") : "-"}</div></div>
-            <div class="rx-side-card"><div class="rx-side-title">Advice</div><div class="rx-side-body">${esc8(v.advice || "-").replace(/\n/g,"<br>")}</div></div>
-            <div class="rx-side-card"><div class="rx-side-title">Follow-up</div><div class="rx-side-body">${v.followupDays ? `${esc8(v.followupDays)} days later` : ""}${v.followupDate ? `${v.followupDays ? " — " : ""}${esc8(v.followupDate)}` : ""}${!v.followupDays&&!v.followupDate?"-":""}</div></div>
-          </aside>
+        <div class="patient">
+          <b>Patient:</b> ${esc8(p.name)}
+          &nbsp; <b>ID:</b> ${esc8(p.id)}
+          &nbsp; <b>Age:</b> ${esc8(p.age || "-")}
+          &nbsp; <b>Gender:</b> ${esc8(p.gender || "-")}
+          <br><b>Phone:</b> ${esc8(p.phone)}
+          &nbsp; <b>Date:</b> ${esc8(new Date(v.date).toLocaleString())}
+        </div>
 
-          <section class="rx-prescription-area">
-            <div class="rx-symbol">℞</div>
-            <div class="rx-prescription-label">PRESCRIPTION / MEDICINES</div>
-            ${meds.length ? `<table class="rx-medicine-table"><thead><tr><th>#</th><th>Medicine</th><th>Frequency</th><th>Food</th><th>Duration</th></tr></thead><tbody>${meds.map((m,i)=>`<tr><td>${i+1}</td><td><b>${esc8(m.name || "")} ${esc8(m.strength || "")}</b>${m.generic||m.form?`<br><small>${esc8(m.generic || "")} ${esc8(m.form || "")}</small>`:""}${m.prnInstruction?`<br><small class="rx-prn">(${esc8(m.prnInstruction)})</small>`:""}</td><td>${esc8(m.frequency || "-")}</td><td>${esc8(food(m.food))}</td><td>${esc8(m.duration || "-")}</td></tr>`).join("")}</tbody></table>` : `<div class="rx-empty-medicine">No medicine prescribed.</div>`}
-            <div class="rx-signature"><div class="rx-sign-line"></div><b>${esc8(pr.name || "")}</b><br><span>${esc8(pr.degree || "")}</span></div>
-          </section>
-        </main>
-        <footer class="rx-footer"><span>${esc8(p.name || "")} • Prescription</span><span>Patient ID: ${esc8(p.id || "-")}</span></footer>
-      </div>`;
+        <div class="title">Clinical Information</div>
+        <div class="box">
+          <b>BP:</b> ${esc8(v.bp || "-")} &nbsp;
+          <b>Temp:</b> ${esc8(v.temperature || "-")} &nbsp;
+          <b>Weight:</b> ${esc8(v.weight || "-")}<br>
+          <b>Symptoms:</b> ${esc8(v.symptoms || "-")}<br>
+          <b>Diagnosis:</b> ${esc8(v.diagnosis || "-")}
+        </div>
 
-    document.body.appendChild(overlay);
-    const style = document.createElement("style");
-    style.id = "v8PrintStyle";
-    style.textContent = `
-      #v8PrintOverlay{position:fixed;inset:0;z-index:20000;background:#fff;overflow:auto}
-      .rx-reference-sheet{width:calc(100% - 32px);max-width:980px;min-height:100%;margin:0 auto;background:#fff;color:#18343a;font-family:Arial,'Noto Sans Bengali',sans-serif;box-sizing:border-box}
-      .rx-top-line{height:9px;background:#087f73}
-      .rx-reference-header{display:flex;justify-content:space-between;gap:30px;padding:22px 24px 16px;background:#effbfb;border:1px solid #d3e9e7;border-top:0}
-      .rx-doctor-name,.rx-clinic-name{font-size:29px;font-weight:800;color:#006f69;letter-spacing:.2px}.rx-doctor-degree{font-size:15px;font-weight:700;margin-top:3px}.rx-doctor-meta,.rx-date{font-size:12px;color:#466268;margin-top:3px}.rx-clinic-head{text-align:right}.rx-clinic-name{font-size:20px}.rx-date{font-size:12px;margin-top:8px}
-      .rx-patient-section{margin:14px 24px 0;border:1px solid #cfe5e3;border-radius:12px;overflow:hidden}.rx-section-title,.rx-side-title{font-weight:800;color:#086f69;background:#ecfafa;padding:9px 12px;border-bottom:1px solid #cfe5e3}.rx-patient-grid{display:grid;grid-template-columns:1.6fr .6fr .6fr 1fr .9fr}.rx-patient-grid>div{padding:9px 12px;border-right:1px solid #d7e9e8;min-height:48px;box-sizing:border-box}.rx-patient-grid>div:last-child{border-right:0}.rx-patient-grid span{display:block;font-size:10px;color:#5c777b;margin-bottom:6px}.rx-patient-grid b{font-size:14px;color:#263f44}
-      .rx-main-grid{display:grid;grid-template-columns:235px 1fr;gap:18px;margin:12px 24px 0}.rx-sidebar{border-right:2px solid #d6e8e6;padding-right:16px}.rx-side-card{border:1px solid #cfe5e3;border-radius:11px;overflow:hidden;margin-bottom:10px}.rx-side-title{font-size:13px}.rx-side-body{padding:10px 12px;font-size:12px;line-height:1.55;min-height:24px}.rx-vitals{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:10px}.rx-vitals>div{border:1px solid #d7e9e8;border-radius:8px;padding:7px}.rx-vitals span{display:block;color:#147b75;font-size:10px;font-weight:700}.rx-vitals b{font-size:12px}.rx-invest-item{padding:3px 0;border-bottom:1px dashed #dbe9e8}.rx-invest-item:last-child{border-bottom:0}
-      .rx-prescription-area{min-height:510px;position:relative}.rx-symbol{font-size:43px;font-weight:900;color:#087f73;line-height:1}.rx-prescription-label{font-size:13px;color:#5c777b;margin:0 0 8px}.rx-medicine-table{width:100%;border-collapse:collapse}.rx-medicine-table th{background:#087f73;color:#fff;font-size:12px;text-align:left;padding:9px}.rx-medicine-table td{border:1px solid #d6e4e4;padding:8px;font-size:12px;vertical-align:top}.rx-medicine-table td:first-child,.rx-medicine-table th:first-child{width:34px;text-align:center}.rx-medicine-table small{color:#5e7377}.rx-prn{font-style:italic}.rx-empty-medicine{border:1px solid #d6e4e4;padding:12px}.rx-signature{text-align:right;margin-top:60px;margin-right:14px;font-size:12px}.rx-sign-line{width:190px;border-top:1px solid #455b5f;margin-left:auto;margin-bottom:5px}.rx-signature b{font-size:12px}.rx-footer{border-top:1px solid #cfe5e3;margin:32px 24px 0;padding:8px 0;color:#688084;font-size:10px;display:flex;justify-content:space-between}
-      @media(max-width:700px){.rx-reference-header{flex-direction:column}.rx-clinic-head{text-align:left}.rx-patient-grid{grid-template-columns:1fr 1fr}.rx-patient-grid>div{border-bottom:1px solid #d7e9e8}.rx-main-grid{grid-template-columns:1fr}.rx-sidebar{border-right:0;padding-right:0}.rx-prescription-area{min-height:auto}}
-      @media print{#v8PrintOverlay{position:static;overflow:visible;background:#fff}body>*:not(#v8PrintOverlay){display:none!important}.rx-reference-sheet{width:100%;max-width:none;min-height:0}.rx-reference-header{padding:14px 18px 11px}.rx-patient-section,.rx-main-grid{margin-left:18px;margin-right:18px}.rx-footer{margin-left:18px;margin-right:18px}.rx-sidebar{break-inside:avoid}.rx-medicine-table{break-inside:auto}.rx-medicine-table tr{break-inside:avoid;break-after:auto}}
-    `;
-    document.head.appendChild(style);
+        <div class="rx">℞ Prescription</div>
+        ${meds.length ? `<table>
+          <thead><tr><th>Medicine</th><th>Frequency</th><th>Food</th><th>Duration</th></tr></thead>
+          <tbody>${meds.map(m=>`<tr>
+            <td><b>${esc8(m.name || "")} ${esc8(m.strength || "")}</b><br>
+              <small>${esc8(m.generic || "")} ${esc8(m.form || "")}</small></td>
+            <td>${esc8(m.frequency || "-")}</td>
+            <td>${esc8(m.food || "-")}</td>
+            <td>${esc8(m.duration || "-")}</td>
+          </tr>`).join("")}</tbody>
+        </table>` : `<div class="box">No medicine prescribed.</div>`}
 
-    const close = document.createElement("button");
-    close.textContent = "✕ Close";
-    close.className = "btn secondary";
-    close.style.cssText = "position:fixed;right:12px;top:12px;z-index:20001";
-    close.onclick = cleanup;
-    overlay.appendChild(close);
-    function cleanup(){ q("v8PrintOverlay")?.remove(); q("v8PrintStyle")?.remove(); window.removeEventListener("afterprint",cleanup); }
-    window.addEventListener("afterprint",cleanup,{once:true});
-    setTimeout(()=>window.print(),250);
+        ${inv.length ? `<div class="title">🧪 Investigations</div>
+          <div class="box">${inv.map(x=>`• ${esc8(x)}`).join("<br>")}</div>` : ""}
+
+        <div class="title">Advice</div>
+        <div class="box">${esc8(v.advice || "-").replace(/\n/g,"<br>")}</div>
+
+        ${(v.followupDays || v.followupDate) ? `<div class="title">🔁 Follow-up</div>
+          <div class="follow">
+            ${v.followupDays ? `After <b>${esc8(v.followupDays)} days</b>` : ""}
+            ${v.followupDate ? ` — Date: <b>${esc8(v.followupDate)}</b>` : ""}
+          </div>` : ""}
+
+        <div class="sign">
+          <b>${esc8(pr.name || "")}</b><br>
+          ${esc8(pr.degree || "")}
+        </div>
+
+        <button class="no-print" onclick="window.print()">🖨 Print</button>
+      </div>
+      <script>setTimeout(()=>window.print(),250);<\/script>
+      </body></html>`);
+    w.document.close();
   };
 
   window.v8PrintLast = function() {
@@ -877,4 +873,124 @@
   } else {
     mount();
   }
+})();
+
+
+/* =========================
+   V9 FINAL FIX PACK
+   - Explicit in-page investigation picker (no mobile keyboard/datalist dependency)
+   - Investigations are stored on every new visit and printed
+   - Prescription print layout follows the supplied reference sheet
+   - Re-runs safely if the PWA restores an old DOM
+   ========================= */
+(function(){
+  "use strict";
+  const Q=id=>document.getElementById(id);
+  const E=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  const invs=["CBC","BC","FBS","RBS","HbA1c","Serum Creatinine","Blood Urea","Lipid Profile","LFT","Urine R/E","Urine C/S","TSH","FT4","CRP","ESR","Electrolytes","ECG","Chest X-Ray","USG of Whole Abdomen","USG of KUB","Stool R/E"];
+
+  function values(prefix){return [...document.querySelectorAll(`#${prefix}InvestigationSelected [data-investigation]`)].map(x=>x.dataset.investigation).filter(Boolean)}
+  function add(prefix,val){
+    val=String(val||"").trim(); if(!val)return;
+    const box=Q(prefix+"InvestigationSelected"); if(!box)return;
+    if(values(prefix).some(x=>x.toLowerCase()===val.toLowerCase()))return;
+    const d=document.createElement("div"); d.className="v9-inv-chip"; d.dataset.investigation=val;
+    d.innerHTML=`<span>✓ ${E(val)}</span><button type="button" class="v9-x">×</button>`;
+    d.querySelector(".v9-x").onclick=()=>d.remove(); box.appendChild(d);
+  }
+  window.v9OpenInvestigation=function(prefix){
+    Q("v9InvModal")?.remove();
+    const modal=document.createElement("div"); modal.id="v9InvModal";
+    modal.innerHTML=`<div class="v9-inv-dialog">
+      <div class="v9-inv-head"><b>🧪 পরীক্ষা নির্বাচন করুন</b><button type="button" id="v9InvClose">✕</button></div>
+      <input id="v9InvSearch" placeholder="পরীক্ষার নাম লিখে খুঁজুন...">
+      <div id="v9InvList"></div>
+      <div class="v9-custom"><input id="v9InvCustom" placeholder="নিজের পরীক্ষার নাম"><button type="button" id="v9InvCustomBtn">＋ যোগ করুন</button></div>
+    </div>`;
+    document.body.appendChild(modal);
+    const list=Q("v9InvList"), search=Q("v9InvSearch");
+    const render=()=>{const q=(search.value||"").toLowerCase().trim(); const selected=new Set(values(prefix).map(x=>x.toLowerCase()));
+      const arr=invs.filter(x=>!q||x.toLowerCase().includes(q));
+      list.innerHTML=arr.map(x=>`<button type="button" class="v9-inv-option ${selected.has(x.toLowerCase())?"selected":""}" data-v="${E(x)}">${selected.has(x.toLowerCase())?"✓":"＋"} ${E(x)}</button>`).join("")||`<div class="v9-empty">কোনো পরীক্ষা পাওয়া যায়নি</div>`;
+    };
+    list.onclick=e=>{const b=e.target.closest("[data-v]");if(!b)return;add(prefix,b.dataset.v);render();};
+    Q("v9InvClose").onclick=()=>modal.remove();
+    modal.onclick=e=>{if(e.target===modal)modal.remove()};
+    search.oninput=render;
+    Q("v9InvCustomBtn").onclick=()=>{const v=Q("v9InvCustom").value.trim();if(v){add(prefix,v);Q("v9InvCustom").value="";render();}};
+    render(); setTimeout(()=>search.focus(),50);
+  };
+
+  function ensure(prefix, beforeId){
+    if(Q(prefix+"InvestigationUI"))return;
+    const before=Q(beforeId); if(!before)return;
+    const wrap=document.createElement("div"); wrap.id=prefix+"InvestigationUI"; wrap.className="v9-investigation";
+    wrap.innerHTML=`<div class="v9-invest-title"><b>🧪 Investigation / পরীক্ষা-নিরীক্ষা</b><button type="button" class="btn primary" id="${prefix}InvOpen">＋ পরীক্ষা নির্বাচন করুন</button></div>
+      <div id="${prefix}InvestigationSelected" class="v9-inv-selected"><span class="v9-placeholder">কোনো পরীক্ষা নির্বাচন করা হয়নি</span></div>`;
+    before.parentNode.insertBefore(wrap,before);
+    Q(prefix+"InvOpen").onclick=()=>window.v9OpenInvestigation(prefix);
+  }
+  function clear(prefix){Q(prefix+"InvestigationSelected")&&(Q(prefix+"InvestigationSelected").innerHTML='<span class="v9-placeholder">কোনো পরীক্ষা নির্বাচন করা হয়নি</span>')}
+  function get(prefix){return values(prefix)}
+  function hidePlaceholder(prefix){const b=Q(prefix+"InvestigationSelected"); if(b && get(prefix).length) b.querySelector(".v9-placeholder")?.remove()}
+  const oldAdd=window.v8AddInvestigation;
+  // Keep old API working, but render through the new chip list when present.
+  window.v8AddInvestigation=function(prefix){const input=Q(prefix+"InvestigationInput"); const v=input?.value?.trim(); if(v && Q(prefix+"InvestigationSelected")){add(prefix,v);input.value="";hidePlaceholder(prefix);return;} if(oldAdd)oldAdd(prefix);};
+
+  function profile(){return typeof getProfile==="function"?getProfile():window.profile||{}}
+  function printHTML(p,v){
+    const pr=profile(), phones=[pr.phone1,pr.phone2].filter(Boolean).join(" , ");
+    const meds=v.medicines||[], inv=get("v").length?get("v"):(v.investigations||[]);
+    const cc=v.symptoms||"-";
+    const oe=[v.bp&&`BP: ${E(v.bp)}`,v.temperature&&`Temp: ${E(v.temperature)}`,v.weight&&`Weight: ${E(v.weight)}`].filter(Boolean).join(" • ")||"-";
+    return `<div class="rx9">
+      <div class="rx9-top"><div><div class="rx9-doc">${E(pr.name||"")}</div><b>${E(pr.degree||"")}</b><div>${E(phones)}</div><div>${E(pr.address||"")}</div></div><div class="rx9-clinic">${E(pr.clinic||"Mariyam Shebaloy")}<div>Date: ${E(new Date(v.date).toLocaleDateString())}</div></div></div>
+      <div class="rx9-patient-title">PATIENT INFORMATION</div><div class="rx9-patient"><div><span>নাম</span><b>${E(p.name)}</b></div><div><span>বয়স</span><b>${E(p.age||"-")}</b></div><div><span>লিঙ্গ</span><b>${E(p.gender||"-")}</b></div><div><span>মোবাইল</span><b>${E(p.phone||"-")}</b></div><div><span>PATIENT ID</span><b>${E(p.id)}</b></div></div>
+      <div class="rx9-body"><div class="rx9-side">
+        <div class="rx9-box"><h4>CC — Chief Complaints</h4><div>${E(cc).replace(/\n/g,"<br>")}</div></div>
+        <div class="rx9-box"><h4>O/E — On Examination</h4><div class="rx9-vitals"><span>BP<br><b>${E(v.bp||"-")}</b></span><span>Temp.<br><b>${E(v.temperature||"-")}</b></span><span>Weight<br><b>${E(v.weight||"-")}</b></span><span>Gender<br><b>${E(p.gender||"-")}</b></span></div></div>
+        <div class="rx9-box"><h4>Diagnosis</h4><div>${E(v.diagnosis||"-")}</div></div>
+        <div class="rx9-box"><h4>Investigation</h4><div>${inv.length?inv.map(x=>`<div>• ${E(x)}</div>`).join(""):"-"}</div></div>
+        <div class="rx9-box"><h4>Advice</h4><div>${E(v.advice||"-").replace(/\n/g,"<br>")}</div></div>
+        <div class="rx9-box"><h4>Follow-up</h4><div>${E(v.followupDate|| (v.followupDays?`${v.followupDays} days`:"-"))}</div></div>
+      </div><div class="rx9-main"><div class="rx9-rx">℞</div><div class="rx9-sub">PRESCRIPTION / MEDICINES</div>
+        ${meds.length?`<table><thead><tr><th>#</th><th>Medicine</th><th>Frequency</th><th>Food</th><th>Duration</th></tr></thead><tbody>${meds.map((m,i)=>`<tr><td>${i+1}</td><td><b>${E(m.name||"")} ${E(m.strength||"")}</b><br><small>${E(m.generic||"")} ${E(m.form||"")}</small></td><td>${E(m.frequency||"-")}</td><td>${E(m.food||"-")}</td><td>${E(m.duration||"-")}</td></tr>`).join("")}</tbody></table>`:`<div class="rx9-empty">কোনো ওষুধ দেওয়া হয়নি।</div>`}
+        <div class="rx9-sign">${E(pr.name||"")}<br>${E(pr.degree||"")}</div></div></div>
+      <div class="rx9-foot"><span>${E(p.name)} • Prescription</span><span>Patient ID: ${E(p.id)}</span></div>
+    </div>`;
+  }
+  window.printPrescription=function(pid,vid){
+    const p=(patients||[]).find(x=>x.id===pid); if(!p)return; const v=(p.visits||[]).find(x=>x.id===vid);if(!v)return;
+    // For saved visits, use the saved data. The live v-picker is only relevant while editing.
+    const data=Object.assign({},v,{investigations:Array.isArray(v.investigations)?v.investigations:[]});
+    const old=Q("rx9Overlay");old?.remove(); const ov=document.createElement("div");ov.id="rx9Overlay";ov.innerHTML=printHTML(p,data)+`<button id="rx9Close" class="btn secondary">✕ Close</button>`;document.body.appendChild(ov);
+    Q("rx9Close").onclick=()=>ov.remove(); setTimeout(()=>window.print(),150);
+  };
+
+  function hookSave(){
+    const old=window.saveVisit;
+    window.saveVisit=function(){
+      const p=(patients||[]).find(x=>x.id===window.currentVisitPatientId);if(!p){return old&&old()}
+      // Let existing V9/V8 save logic run, then force investigations from the visible picker into the saved visit.
+      const before=p.visits?.length||0; old&&old();
+      const saved=p.visits?.[p.visits.length-1]; if(saved && (p.visits.length>before)) {saved.investigations=get("v"); save(KEY_PATIENTS,patients);}
+    };
+  }
+  function hookStart(){
+    const old=window.startVisit;
+    window.startVisit=function(id){old&&old(id);setTimeout(()=>{ensure("v","vAdvice");clear("v");},30)};
+  }
+  function hookPatient(){
+    const old=window.saveNewPatient;
+    window.saveNewPatient=function(){old&&old();setTimeout(()=>{ensure("p","pAdvice");},30)};
+  }
+  function mount(){
+    // CSS
+    if(!Q("v9Css")){const s=document.createElement("style");s.id="v9Css";s.textContent=`
+      .v9-investigation{margin:16px 0;padding:14px;border:1px solid #dbe4f0;border-radius:14px;background:#fbfdff}.v9-invest-title{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}.v9-inv-selected{margin-top:10px;min-height:42px}.v9-placeholder{color:#9ca3af}.v9-inv-chip{display:flex;justify-content:space-between;align-items:center;padding:9px 11px;margin:6px 0;border:1px solid #bfe3db;border-radius:9px;background:#effaf7}.v9-x{border:0;background:transparent;font-size:20px;cursor:pointer}.v9-inv-dialog{width:min(620px,94vw);max-height:86vh;overflow:auto;background:#fff;border-radius:18px;padding:16px;box-shadow:0 20px 60px #0004}.v9-inv-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}.v9-inv-head button{border:0;background:#eee;border-radius:9px;padding:8px 11px}.v9-inv-option{width:100%;text-align:left;padding:12px;margin:4px 0;border:1px solid #dbe4f0;border-radius:9px;background:#fff}.v9-inv-option.selected{background:#e8f7f3;border-color:#17a689}.v9-custom{display:flex;gap:8px;margin-top:12px}.v9-custom input{flex:1}.v9-empty{text-align:center;padding:18px;color:#777}#v9InvModal{position:fixed;inset:0;background:#0008;z-index:99999;display:flex;align-items:center;justify-content:center;padding:10px}
+      #rx9Overlay{position:fixed;inset:0;z-index:99998;background:#fff;overflow:auto;padding:20px}.rx9{max-width:930px;margin:auto;font-family:Arial,"Noto Sans Bengali",sans-serif;color:#17333a}.rx9-top{border-top:8px solid #087f73;background:#eefafa;padding:18px 24px;display:flex;justify-content:space-between;gap:20px}.rx9-doc{font-size:27px;font-weight:800;color:#006e68}.rx9-clinic{text-align:right;font-size:18px;font-weight:800;color:#00786f}.rx9-patient-title{margin-top:14px;background:#dff5f3;border:1px solid #c4e5e2;padding:8px 12px;font-weight:800}.rx9-patient{display:grid;grid-template-columns:2fr .7fr .8fr 1.2fr 1fr;border:1px solid #d4e1e2}.rx9-patient>div{padding:9px;border-right:1px solid #d4e1e2}.rx9-patient span{display:block;font-size:11px;color:#65777b}.rx9-body{display:grid;grid-template-columns:235px 1fr;gap:18px;margin-top:14px}.rx9-side{border-right:2px solid #d5e4e5;padding-right:14px}.rx9-box{border:1px solid #cbdfe0;border-radius:10px;margin-bottom:10px;overflow:hidden}.rx9-box h4{margin:0;padding:8px 10px;background:#e9f8f7;color:#006e68;font-size:14px}.rx9-box>div{padding:10px;font-size:13px}.rx9-vitals{display:grid!important;grid-template-columns:1fr 1fr;gap:7px}.rx9-vitals span{border:1px solid #dce8e9;border-radius:7px;padding:7px}.rx9-main{padding:0 3px}.rx9-rx{font-size:46px;font-weight:800;color:#006e68}.rx9-sub{font-size:13px;color:#617276;margin-bottom:6px}.rx9-main table{width:100%;border-collapse:collapse}.rx9-main th{background:#007f73;color:#fff}.rx9-main th,.rx9-main td{border:1px solid #cbdfe0;padding:8px;text-align:left;font-size:12px;vertical-align:top}.rx9-sign{text-align:right;margin-top:65px;border-top:1px solid #567;padding-top:5px;font-weight:700;display:inline-block;float:right;min-width:190px}.rx9-foot{clear:both;border-top:1px solid #cbdfe0;margin-top:110px;padding-top:8px;font-size:11px;color:#708084;display:flex;justify-content:space-between}@media(max-width:700px){.rx9-patient{grid-template-columns:1fr 1fr}.rx9-body{grid-template-columns:1fr}.rx9-side{border-right:0;padding-right:0}.rx9-top{flex-direction:column}.rx9-clinic{text-align:left}.rx9-sign{margin-top:40px}}@media print{body>*:not(#rx9Overlay){display:none!important}#rx9Overlay{position:static!important;padding:0!important}#rx9Close{display:none!important}.rx9{max-width:none}.rx9-top{border-top-width:6px}.rx9-foot{margin-top:60px}}
+    `;document.head.appendChild(s)}
+    ensure("p","pAdvice"); ensure("v","vAdvice"); hookSave(); hookStart(); hookPatient();
+  }
+  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>setTimeout(mount,50));else setTimeout(mount,50);
 })();
