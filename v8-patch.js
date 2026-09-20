@@ -478,63 +478,321 @@
   @page{size:A4 portrait;margin:0}
   *{box-sizing:border-box}
   html,body{margin:0;padding:0;background:#fff}
-  body{font-family:Arial,"Noto Sans Bengali","Noto Sans",sans-serif;color:#193f40;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-  .sheet{width:210mm;min-height:297mm;margin:0 auto;padding:7mm 14mm 9mm;position:relative;background:#fff}
+  body{
+    font-family:Arial,"Noto Sans Bengali","Noto Sans",sans-serif;
+    color:#314445;
+    -webkit-print-color-adjust:exact;
+    print-color-adjust:exact
+  }
 
-  /* EXACT visual structure of the supplied reference */
-  .topbar{height:3mm;background:#07877d;margin:0 0 0 0}
-  .header{height:31mm;background:#effafa;border:1px solid #d5e8e7;border-top:0;padding:4.5mm 5mm 3.5mm;position:relative}
-  .doctorName{font-size:25px;line-height:1.05;font-weight:800;letter-spacing:.1px;color:#075b59;margin:0 0 2mm}
-  .degree{font-size:13px;font-weight:700;color:#345354;margin-bottom:1.4mm}
-  .contact,.address{font-size:11px;color:#506466;line-height:1.45}
-  .clinic{position:absolute;right:5mm;top:4.5mm;text-align:right;font-size:18px;font-weight:800;color:#07877d}
-  .date{position:absolute;right:5mm;top:11.5mm;font-size:11px;color:#5a6b6c}
-  .headerRule{position:absolute;left:5mm;right:5mm;bottom:3mm;height:1px;background:#c7dedd}
+  /* A4 prescription sheet — matched to the supplied reference */
+  .sheet{
+    width:210mm;
+    min-height:297mm;
+    margin:0 auto;
+    padding:6.4mm 13.3mm 9mm;
+    position:relative;
+    background:#fff
+  }
 
-  .patientBox{margin-top:3.2mm;border:1px solid #cfe2e1;border-radius:4mm;overflow:hidden}
-  .patientTitle{height:7mm;background:#e8f8f7;border-bottom:1px solid #cfe2e1;padding:1.7mm 3mm;font-size:12px;font-weight:800;color:#0a6663}
-  .patientGrid{display:grid;grid-template-columns:1.75fr .55fr .6fr 1fr .95fr;min-height:13mm}
-  .patientCell{padding:2.2mm 2.4mm;border-right:1px solid #d7e6e5}
+  .topbar{
+    height:2.8mm;
+    background:#11746f
+  }
+
+  .header{
+    height:29.2mm;
+    background:#f1fdfb;
+    border:1px solid #d7e9e7;
+    border-top:0;
+    padding:4.4mm 4.8mm 3.3mm;
+    position:relative
+  }
+
+  .doctorName{
+    font-size:25px;
+    line-height:1.05;
+    font-weight:800;
+    letter-spacing:.1px;
+    color:#075b59;
+    margin:0 0 1.7mm
+  }
+
+  .degree{
+    font-size:13px;
+    font-weight:700;
+    color:#3d5556;
+    margin-bottom:1.25mm
+  }
+
+  .contact,.address{
+    font-size:11px;
+    color:#58696a;
+    line-height:1.42
+  }
+
+  .clinic{
+    position:absolute;
+    right:4.8mm;
+    top:4.3mm;
+    text-align:right;
+    font-size:18px;
+    font-weight:800;
+    color:#0e766d
+  }
+
+  .date{
+    position:absolute;
+    right:4.8mm;
+    top:11.4mm;
+    font-size:11px;
+    color:#687878
+  }
+
+  .headerRule{
+    position:absolute;
+    left:4.8mm;
+    right:4.8mm;
+    bottom:3mm;
+    height:1px;
+    background:#cbdedd
+  }
+
+  .patientBox{
+    margin:3.1mm 4mm 0;
+    border:1px solid #cfe3e1;
+    border-radius:3.1mm;
+    overflow:hidden
+  }
+
+  .patientTitle{
+    height:6.8mm;
+    background:#eaf9f8;
+    border-bottom:1px solid #cfe3e1;
+    padding:1.55mm 2.7mm;
+    font-size:12px;
+    font-weight:800;
+    color:#0a6663
+  }
+
+  .patientGrid{
+    display:grid;
+    grid-template-columns:1.75fr .55fr .6fr 1fr .95fr;
+    min-height:12.8mm
+  }
+
+  .patientCell{
+    padding:2.05mm 2.3mm;
+    border-right:1px solid #d7e6e5
+  }
+
   .patientCell:last-child{border-right:0}
-  .pLabel{font-size:9px;color:#687b7c;margin-bottom:1.2mm}
-  .pValue{font-size:12px;font-weight:700;color:#314243;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
-  .content{display:grid;grid-template-columns:49mm 1fr;column-gap:4mm;margin-top:3mm}
-  .sidebar{border-right:1px solid #d4e1e0;padding-right:3mm;min-height:187mm}
+  .pLabel{
+    font-size:9px;
+    color:#6c7c7d;
+    margin-bottom:1.05mm
+  }
+
+  .pValue{
+    font-size:12px;
+    font-weight:700;
+    color:#334445;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis
+  }
+
+  .content{
+    display:grid;
+    grid-template-columns:47mm 1fr;
+    column-gap:4mm;
+    margin:2.9mm 4mm 0
+  }
+
+  .sidebar{
+    border-right:1px solid #d3e1df;
+    padding-right:3mm;
+    min-height:187mm
+  }
+
   .main{padding-left:0}
-  .sideCard{border:1px solid #cfe2e1;border-radius:3mm;overflow:hidden;margin-bottom:3mm;background:#fff}
-  .sideHead{background:#e8f8f7;border-bottom:1px solid #cfe2e1;padding:2.1mm 2.7mm;font-size:12px;font-weight:800;color:#0a6663}
-  .sideBody{padding:3mm;font-size:11px;line-height:1.55;color:#33494a;min-height:13mm}
-  .oeBody{min-height:39mm}
-  .vitals{display:grid;grid-template-columns:1fr 1fr;gap:2.5mm;margin-top:2mm}
-  .vital{border:1px solid #dce8e7;border-radius:2.5mm;padding:2.2mm;background:#fff}
-  .vital b{display:block;font-size:10px;color:#14706c;margin-bottom:1mm}
+
+  .sideCard{
+    border:1px solid #cfe3e1;
+    border-radius:3mm;
+    overflow:hidden;
+    margin-bottom:2.9mm;
+    background:#fff
+  }
+
+  .sideHead{
+    background:#eaf9f8;
+    border-bottom:1px solid #cfe3e1;
+    padding:2mm 2.6mm;
+    font-size:12px;
+    font-weight:800;
+    color:#0a6663
+  }
+
+  .sideBody{
+    padding:2.9mm;
+    font-size:11px;
+    line-height:1.5;
+    color:#35494a;
+    min-height:12.5mm
+  }
+
+  .oeBody{min-height:38mm}
+
+  .vitals{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:2.4mm;
+    margin-top:1.9mm
+  }
+
+  .vital{
+    border:1px solid #dce8e7;
+    border-radius:2.4mm;
+    padding:2.1mm;
+    background:#fff
+  }
+
+  .vital b{
+    display:block;
+    font-size:10px;
+    color:#14706c;
+    margin-bottom:.9mm
+  }
+
   .vital span{font-size:11px;color:#344b4c}
 
-  .rxMark{font-family:Georgia,serif;font-size:38px;line-height:1;color:#087e77;font-weight:700;margin:0 0 1mm 0}
-  .rxLabel{font-size:12px;color:#6a7778;letter-spacing:.2px;margin-bottom:2mm}
-  .medTable{width:100%;border-collapse:collapse;table-layout:fixed;border:1px solid #cbdcda}
-  .medTable th{background:#087e77;color:#fff;font-size:10px;font-weight:800;text-align:left;padding:2.1mm 2mm;border-right:1px solid rgba(255,255,255,.25)}
+  .rxMark{
+    font-family:Georgia,"Times New Roman",serif;
+    font-size:38px;
+    line-height:1;
+    color:#087e77;
+    font-weight:700;
+    margin:0 0 1mm 0
+  }
+
+  .rxLabel{
+    font-size:12px;
+    color:#6b7778;
+    letter-spacing:.15px;
+    margin-bottom:2mm
+  }
+
+  .medTable{
+    width:100%;
+    border-collapse:collapse;
+    table-layout:fixed;
+    border:1px solid #cbdcda
+  }
+
+  .medTable th{
+    background:#0e766d;
+    color:#fff;
+    font-size:10px;
+    font-weight:800;
+    text-align:left;
+    padding:2.05mm 1.9mm;
+    border-right:1px solid rgba(255,255,255,.28)
+  }
+
   .medTable th:last-child{border-right:0}
-  .medTable td{font-size:11px;color:#354849;padding:2.3mm 2mm;vertical-align:top;border-top:1px solid #d9e5e4;border-right:1px solid #d9e5e4;line-height:1.35}
+
+  .medTable td{
+    font-size:11px;
+    color:#354849;
+    padding:2.25mm 1.9mm;
+    vertical-align:top;
+    border-top:1px solid #d9e5e4;
+    border-right:1px solid #d9e5e4;
+    line-height:1.35
+  }
+
   .medTable td:last-child{border-right:0}
-  .medTable .num{width:8%;text-align:center}
-  .medTable .medicine{width:52%}
+
+  .medTable .num{width:6%;text-align:center}
+  .medTable .medicine{width:53%}
   .medTable .freq{width:13%}
   .medTable .food{width:16%}
   .medTable .duration{width:16%}
-  .medName{font-size:12px;font-weight:700;color:#253d3e}
-  .medGeneric{font-size:10px;color:#637374;margin-top:1mm}
-  .rxSign{margin-top:9mm;text-align:right;padding-right:1mm}
-  .signLine{width:40mm;border-top:1px solid #526667;margin-left:auto;padding-top:1.5mm;font-size:11px;font-weight:700;color:#4b5b5c}
-  .signDegree{font-size:10px;color:#596a6b;margin-top:.7mm}
 
-  .footer{position:absolute;left:14mm;right:14mm;bottom:6mm;border-top:1px solid #cfe1df;padding-top:2mm;font-size:9px;color:#6a7b7b;display:flex;justify-content:space-between}
+  .medName{
+    font-size:12px;
+    font-weight:700;
+    color:#253d3e
+  }
+
+  .medGeneric{
+    font-size:10px;
+    color:#637374;
+    margin-top:1mm
+  }
+
+  .rxSign{
+    margin-top:8.8mm;
+    text-align:right;
+    padding-right:1mm
+  }
+
+  .signLine{
+    width:40mm;
+    border-top:1px solid #526667;
+    margin-left:auto;
+    padding-top:1.45mm;
+    font-size:11px;
+    font-weight:700;
+    color:#4b5b5c
+  }
+
+  .signDegree{
+    font-size:10px;
+    color:#596a6b;
+    margin-top:.65mm
+  }
+
+  .footer{
+    position:absolute;
+    left:13.3mm;
+    right:13.3mm;
+    bottom:6mm;
+    border-top:1px solid #cfe1df;
+    padding-top:2mm;
+    font-size:9px;
+    color:#6a7b7b;
+    display:flex;
+    justify-content:space-between
+  }
+
   .footer b{color:#16716d}
-  .printBtn{position:fixed;right:18px;bottom:18px;border:0;border-radius:8px;background:#087e77;color:#fff;padding:11px 15px;font-weight:700;cursor:pointer;box-shadow:0 2px 8px #0002}
-  @media screen{.sheet{box-shadow:0 0 18px #00000012;margin:18px auto}.printBtn{display:block}}
-  @media print{.sheet{box-shadow:none;margin:0}.printBtn{display:none!important}}
-</style>
+
+  .printBtn{
+    position:fixed;
+    right:18px;
+    bottom:18px;
+    border:0;
+    border-radius:8px;
+    background:#087e77;
+    color:#fff;
+    padding:11px 15px;
+    font-weight:700;
+    cursor:pointer;
+    box-shadow:0 2px 8px #0002
+  }
+
+  @media screen{
+    .sheet{box-shadow:0 0 18px #00000012;margin:18px auto}
+    .printBtn{display:block}
+  }
+
+  @media print{
+    .sheet{box-shadow:none;margin:0}
+    .printBtn{display:none!important}
+  }</style>
 </head>
 <body>
 <div class="sheet">
