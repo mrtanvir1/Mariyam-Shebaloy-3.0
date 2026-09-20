@@ -706,23 +706,47 @@
       const input=q(prefix+"InvestigationInput");
       if(!input)return;
       input.removeAttribute("list");
-      input.readOnly=true;
-      input.setAttribute("inputmode","none");
       input.setAttribute("autocomplete","off");
-      input.setAttribute("onfocus","this.blur();");
+      input.setAttribute("inputmode","none");
+      input.readOnly=true;
+      input.tabIndex=-1;
       input.style.display="none";
+      const list=q(prefix+"InvestigationList");
+      if(list) list.remove();
       let btn=q(prefix+"InvestigationPickerBtn");
       if(!btn){
         btn=document.createElement("button");
         btn.id=prefix+"InvestigationPickerBtn";
         btn.type="button";
-        btn.className="btn secondary";
-        btn.style.cssText="width:100%;text-align:left;margin:6px 0";
-        btn.textContent="🧪 পরীক্ষা নির্বাচন করুন (CBC, RBC, FBS...)";
-        btn.onclick=(e)=>{e.preventDefault();e.stopPropagation();openInvestigationModal8(prefix);};
+        btn.className="btn secondary v8-investigation-open";
+        btn.textContent="🧪 পরীক্ষা নির্বাচন করুন";
         input.insertAdjacentElement("afterend",btn);
       }
+      btn.onclick=(e)=>{e.preventDefault();e.stopPropagation();openInvestigationModal8(prefix);};
+      btn.onpointerdown=(e)=>{e.preventDefault();e.stopPropagation();};
     });
+  }
+
+  function hardenInvestigationPicker8(){
+    installInvestigationPicker8();
+    if(window.__v8InvObserver)return;
+    window.__v8InvObserver=new MutationObserver(()=>installInvestigationPicker8());
+    window.__v8InvObserver.observe(document.body,{childList:true,subtree:true});
+    if(!window.__v8InvCapture){
+      window.__v8InvCapture=true;
+      document.addEventListener("focusin",function(e){
+        const el=e.target.closest?.("#pInvestigationInput,#vInvestigationInput");
+        if(!el)return;
+        e.preventDefault(); el.blur();
+        openInvestigationModal8(el.id[0]);
+      },true);
+      document.addEventListener("click",function(e){
+        const el=e.target.closest?.("#pInvestigationInput,#vInvestigationInput");
+        if(!el)return;
+        e.preventDefault(); e.stopPropagation();
+        openInvestigationModal8(el.id[0]);
+      },true);
+    }
   }
 
   window.openInvestigationModal8=function(prefix){
@@ -786,7 +810,7 @@
     const overlay=document.createElement("div"); overlay.id="v8PrintOverlay";
     overlay.innerHTML=renderPrintPage8(p,v);
     document.body.appendChild(overlay);
-    const style=document.createElement("style"); style.id="v8PrintStyle"; style.textContent=`.rx-sheet{max-width:800px;margin:0 auto;padding:22px;background:#fff;color:#172033;font-family:Arial,'Noto Sans Bengali',sans-serif}.rx-header{display:flex;justify-content:space-between;gap:20px;border-bottom:3px solid #2563eb;padding-bottom:14px}.rx-doctor{font-size:12px;line-height:1.6}.rx-doctor-name,.rx-clinic-name{font-size:22px;font-weight:800;color:#2563eb}.rx-clinic{text-align:right;font-size:11px;color:#4b5563}.rx-patient,.rx-box{border:1px solid #dbe4f0;border-radius:10px;padding:10px;margin:12px 0}.rx-columns{display:grid;grid-template-columns:1fr 1fr;gap:12px}.rx-label{font-weight:800;margin-top:12px;color:#1d4ed8}.rx-rx{font-size:34px;font-weight:900;margin:12px 0 2px}.rx-table{width:100%;border-collapse:collapse}.rx-table th,.rx-table td{border-bottom:1px solid #ddd;padding:8px;text-align:left;font-size:12px}.rx-follow{margin-top:14px;padding:10px;border-left:4px solid #2563eb;background:#f5f9ff}.rx-sign{text-align:right;margin-top:50px;font-weight:700}@media screen{#v8PrintOverlay{position:fixed;inset:0;z-index:20000;background:#fff;overflow:auto}#v8PrintOverlay:before{content:'🖨 Print Preview';display:block;background:#2563eb;color:#fff;padding:12px;font-weight:700;text-align:center}}@media print{body>*:not(#v8PrintOverlay){display:none!important}#v8PrintOverlay{display:block!important;position:static!important;background:#fff!important}.rx-sheet{max-width:none!important;padding:8mm!important}.rx-columns{grid-template-columns:1fr 1fr!important}}@media(max-width:600px){.rx-columns{grid-template-columns:1fr}}`;
+    const style=document.createElement("style"); style.id="v8PrintStyle"; style.textContent=`.rx-sheet{max-width:820px;margin:0 auto;padding:0 0 28px;background:#fff;color:#172033;font-family:Arial,'Noto Sans Bengali',sans-serif}.rx-header{display:grid;grid-template-columns:1fr 1fr;gap:20px;border-bottom:4px solid #2563eb;padding:18px 20px 14px;background:linear-gradient(135deg,#f7fbff,#fff)}.rx-doctor{font-size:12px;line-height:1.65}.rx-doctor-name,.rx-clinic-name{font-size:23px;font-weight:800;color:#174ea6}.rx-clinic{text-align:right;font-size:11px;color:#4b5563;line-height:1.6}.rx-patient{margin:14px 20px;border:1px solid #cfd9e8;border-radius:6px;padding:10px 12px;font-size:12px;background:#fbfdff}.rx-box{border:1px solid #dbe4f0;border-radius:5px;padding:10px;margin:7px 0;background:#fff;min-height:24px}.rx-columns{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:0 20px}.rx-columns>div{min-width:0}.rx-label{font-weight:800;margin-top:12px;color:#174ea6;border-bottom:2px solid #dbeafe;padding-bottom:4px}.rx-rx{font-size:38px;font-weight:900;margin:14px 20px 4px;color:#111827}.rx-table{width:calc(100% - 40px);margin:0 20px;border-collapse:collapse}.rx-table th{background:#eef5ff;color:#174ea6}.rx-table th,.rx-table td{border:1px solid #dbe4f0;padding:8px;text-align:left;font-size:12px;vertical-align:top}.rx-follow{margin:14px 20px;padding:10px 12px;border-left:4px solid #2563eb;background:#f5f9ff}.rx-sign{text-align:right;margin:55px 20px 0;font-weight:700}@media screen{#v8PrintOverlay{position:fixed;inset:0;z-index:20000;background:#fff;overflow:auto}#v8PrintOverlay:before{content:'🖨 Print Preview';display:block;background:#2563eb;color:#fff;padding:12px;font-weight:700;text-align:center}}@media print{body>*:not(#v8PrintOverlay){display:none!important}#v8PrintOverlay{display:block!important;position:static!important;background:#fff!important}.rx-sheet{max-width:none!important;padding:8mm!important}.rx-columns{grid-template-columns:1fr 1fr!important}}@media(max-width:600px){.rx-columns{grid-template-columns:1fr}}`;
     document.head.appendChild(style);
     const close=document.createElement("button"); close.textContent="✕ Close"; close.className="btn secondary"; close.style.cssText="position:fixed;right:12px;top:12px;z-index:20001"; close.onclick=cleanup; overlay.appendChild(close);
     function cleanup(){q("v8PrintOverlay")?.remove();q("v8PrintStyle")?.remove();window.removeEventListener("afterprint",cleanup);}
@@ -820,8 +844,8 @@
   };
 
   function installV81Fixes(){
-    installInvestigationPicker8();
-    if(!window.__v8InvCapture){ window.__v8InvCapture=true; document.addEventListener("pointerdown",function(e){ const el=e.target.closest("#pInvestigationInput,#vInvestigationInput"); if(!el)return; e.preventDefault(); e.stopPropagation(); openInvestigationModal8(el.id[0]); }, true); }
+    hardenInvestigationPicker8();
+
     if(!q("v8PrnStyle")){ const st=document.createElement("style"); st.id="v8PrnStyle"; st.textContent=".v8-prn-text{min-width:0}.v8-prn-type{min-width:190px}"; document.head.appendChild(st); }
     // Make any already-rendered V8 food selects Bengali without changing stored values.
     document.querySelectorAll(".med-food,.v8-med-food").forEach(sel=>{
