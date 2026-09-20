@@ -52,12 +52,28 @@ hr{border:0;border-top:1px solid #e5e7eb;margin:18px 0}
 .mdb-detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 @media(max-width:650px){.mdb-detail-grid{grid-template-columns:1fr}}
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="./config.js"></script>
 <link rel="manifest" href="./manifest.json">
 <meta name="theme-color" content="#2563eb">
 <link rel="icon" href="./icon-192.png" sizes="192x192">
 <link rel="apple-touch-icon" href="./icon-192.png">
 </head>
 <body>
+
+<div id="authGate" class="auth-gate">
+  <div class="auth-card">
+    <h2>🏥 Mariyam Shebaloy</h2>
+    <div class="small" style="margin-bottom:14px">Multi-User Clinic Management System</div>
+    <div id="authModeTitle" style="font-weight:800;font-size:20px;margin-bottom:10px">Login</div>
+    <label>Email</label><input id="authEmail" type="email" autocomplete="email" placeholder="doctor@example.com">
+    <label>Password</label><input id="authPassword" type="password" autocomplete="current-password" placeholder="Minimum 6 characters">
+    <button class="btn primary" style="width:100%;margin-top:12px" onclick="submitAuth()" id="authSubmitBtn">Login</button>
+    <button class="btn secondary" style="width:100%" onclick="toggleAuthMode()" id="authToggleBtn">Create new account</button>
+    <button class="btn secondary" style="width:100%" onclick="resetPassword()">Forgot password?</button>
+    <div id="authStatus" class="auth-status"></div>
+  </div>
+</div>
 
 <div class="header">
   <h1>Mariyam Shebaloy</h1>
@@ -69,6 +85,8 @@ hr{border:0;border-top:1px solid #e5e7eb;margin:18px 0}
 <!-- HOME -->
 <section id="home">
   <div class="card">
+    <div class="row" style="margin-bottom:8px"><span class="cloud-badge">☁️ Cloud account</span><button class="btn secondary" onclick="signOut()">Sign out</button></div>
+    <div id="authUserLabel" class="auth-user"></div>
     <input id="globalSearch" class="search" placeholder="🔎 রোগীর নাম বা ফোন নম্বর দিয়ে খুঁজুন" oninput="searchPatients()">
   </div>
 
@@ -368,7 +386,87 @@ function load(key, fallback){
   try { return JSON.parse(localStorage.getItem(key)) || fallback; }
   catch(e){ return fallback; }
 }
-function save(key, value){ localStorage.setItem(key, JSON.stringify(value)); }
+function save(key, value){
+  localStorage.setItem(key, JSON.stringify(value));
+  if(window.cloudReady && window.currentUser) queueCloudSync();
+}
+let cloudSyncTimer=null;
+function queueCloudSync(){
+  clearTimeout(cloudSyncTimer);
+  cloudSyncTimer=setTimeout(syncWorkspaceToCloud,500);
+}
+async function syncWorkspaceToCloud(){
+  if(!window.cloudReady || !window.currentUser || !window.sb)return;
+  try{
+    const payload={id:window.currentUser.id,profile:getProfile(),patients,templates,custom_medicines:medicines.filter(m=>m.custom===true || m.source==='User added')};
+    const {error}=await window.sb.from('clinic_workspaces').upsert(payload,{onConflict:'id'});
+    if(error) throw error;
+  }catch(e){ console.warn('Cloud sync failed',e); }
+}
+async function loadWorkspaceFromCloud(){
+  if(!window.cloudReady || !window.currentUser || !window.sb)return;
+  try{
+    const {data,error}=await window.sb.from('clinic_workspaces').select('*').eq('id',window.currentUser.id).maybeSingle();
+    if(error) throw error;
+    if(data){
+      profile={...DEFAULT_PROFILE,...(data.profile||{})};
+      patients=Array.isArray(data.patients)?data.patients:[];
+      templates=Array.isArray(data.templates)?data.templates:[];
+      const custom=Array.isArray(data.custom_medicines)?data.custom_medicines:[];
+      medicines=[...custom,...dgdaMedicines];
+      save(KEY_PROFILE,profile); save(KEY_PATIENTS,patients); save(KEY_TEMPLATES,templates); save(KEY_MEDICINES,custom);
+      updateBranding(); loadProfileForm(); renderPatients(); renderTemplates(); renderDashboardStats(); updateBackupPatientSelect();
+      toast('☁️ Cloud data loaded');
+    }else{
+      await syncWorkspaceToCloud();
+    }
+  }catch(e){ console.error(e); toast('Cloud data load failed'); }
+}
+function setAuthVisible(visible){
+  const gate=document.getElementById('authGate'); if(gate) gate.style.display=visible?'flex':'none';
+  document.querySelector('.header')?.classList.toggle('hidden',visible);
+  document.querySelector('.container')?.classList.toggle('hidden',visible);
+}
+let authSignUpMode=false;
+function toggleAuthMode(){
+  authSignUpMode=!authSignUpMode;
+  document.getElementById('authModeTitle').textContent=authSignUpMode?'Create Account':'Login';
+  document.getElementById('authSubmitBtn').textContent=authSignUpMode?'Create Account':'Login';
+  document.getElementById('authToggleBtn').textContent=authSignUpMode?'Back to Login':'Create new account';
+}
+async function submitAuth(){
+  if(!window.sb){document.getElementById('authStatus').textContent='Supabase config is missing. Edit config.js first.';return;}
+  const email=document.getElementById('authEmail').value.trim(); const password=document.getElementById('authPassword').value;
+  if(!email||password.length<6){document.getElementById('authStatus').textContent='Email and a password of at least 6 characters are required.';return;}
+  document.getElementById('authStatus').textContent='Please wait…';
+  try{
+    const result=authSignUpMode?await window.sb.auth.signUp({email,password}):await window.sb.auth.signInWithPassword({email,password});
+    if(result.error) throw result.error;
+    if(authSignUpMode && !result.data.session){document.getElementById('authStatus').textContent='Account created. Check your email to confirm, then login.';return;}
+    window.currentUser=result.data.user; setAuthVisible(false); await loadWorkspaceFromCloud(); updateAuthUserLabel();
+  }catch(e){document.getElementById('authStatus').textContent=e.message||'Authentication failed';}
+}
+async function resetPassword(){
+  if(!window.sb)return; const email=document.getElementById('authEmail').value.trim();
+  if(!email){document.getElementById('authStatus').textContent='Enter your email first.';return;}
+  const {error}=await window.sb.auth.resetPasswordForEmail(email,{redirectTo:location.origin+location.pathname});
+  document.getElementById('authStatus').textContent=error?(error.message||'Reset failed'):'Password reset email sent.';
+}
+async function signOut(){ if(window.sb) await window.sb.auth.signOut(); window.currentUser=null; setAuthVisible(true); document.getElementById('authStatus').textContent='Signed out.'; }
+function updateAuthUserLabel(){const el=document.getElementById('authUserLabel');if(el&&window.currentUser)el.textContent='Signed in as '+(window.currentUser.email||'account');}
+async function initCloudAuth(){
+  const url=window.MARIYAM_SUPABASE_URL, key=window.MARIYAM_SUPABASE_ANON_KEY;
+  if(!url||url.includes('YOUR-PROJECT')||!key||key.includes('YOUR_SUPABASE')){ setAuthVisible(false); return; }
+  window.sb=window.supabase.createClient(url,key); window.cloudReady=true;
+  const {data}=await window.sb.auth.getSession();
+  if(data.session){window.currentUser=data.session.user;setAuthVisible(false);await loadWorkspaceFromCloud();updateAuthUserLabel();}
+  else setAuthVisible(true);
+  window.sb.auth.onAuthStateChange(async (_event,session)=>{
+    if(session){window.currentUser=session.user;setAuthVisible(false);await loadWorkspaceFromCloud();updateAuthUserLabel();}
+    else {window.currentUser=null;setAuthVisible(true);}
+  });
+}
+
 
 function uid(prefix){
   return prefix + Date.now().toString(36) + Math.random().toString(36).slice(2,6);
@@ -1500,6 +1598,7 @@ loadProfileForm();
 renderDashboardStats();
 updateBackupPatientSelect();
 loadMedicineDatabase();
+initCloudAuth();
 </script>
 
 <script>
