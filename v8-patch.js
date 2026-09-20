@@ -478,321 +478,63 @@
   @page{size:A4 portrait;margin:0}
   *{box-sizing:border-box}
   html,body{margin:0;padding:0;background:#fff}
-  body{
-    font-family:Arial,"Noto Sans Bengali","Noto Sans",sans-serif;
-    color:#314445;
-    -webkit-print-color-adjust:exact;
-    print-color-adjust:exact
-  }
+  body{font-family:Arial,"Noto Sans Bengali","Noto Sans",sans-serif;color:#193f40;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .sheet{width:210mm;min-height:297mm;margin:0 auto;padding:7mm 14mm 9mm;position:relative;background:#fff}
 
-  /* A4 prescription sheet — matched to the supplied reference */
-  .sheet{
-    width:210mm;
-    min-height:297mm;
-    margin:0 auto;
-    padding:6.4mm 13.3mm 9mm;
-    position:relative;
-    background:#fff
-  }
+  /* EXACT visual structure of the supplied reference */
+  .topbar{height:3mm;background:#07877d;margin:0 0 0 0}
+  .header{height:31mm;background:#effafa;border:1px solid #d5e8e7;border-top:0;padding:4.5mm 5mm 3.5mm;position:relative}
+  .doctorName{font-size:25px;line-height:1.05;font-weight:800;letter-spacing:.1px;color:#075b59;margin:0 0 2mm}
+  .degree{font-size:13px;font-weight:700;color:#345354;margin-bottom:1.4mm}
+  .contact,.address{font-size:11px;color:#506466;line-height:1.45}
+  .clinic{position:absolute;right:5mm;top:4.5mm;text-align:right;font-size:18px;font-weight:800;color:#07877d}
+  .date{position:absolute;right:5mm;top:11.5mm;font-size:11px;color:#5a6b6c}
+  .headerRule{position:absolute;left:5mm;right:5mm;bottom:3mm;height:1px;background:#c7dedd}
 
-  .topbar{
-    height:2.8mm;
-    background:#11746f
-  }
-
-  .header{
-    height:29.2mm;
-    background:#f1fdfb;
-    border:1px solid #d7e9e7;
-    border-top:0;
-    padding:4.4mm 4.8mm 3.3mm;
-    position:relative
-  }
-
-  .doctorName{
-    font-size:25px;
-    line-height:1.05;
-    font-weight:800;
-    letter-spacing:.1px;
-    color:#075b59;
-    margin:0 0 1.7mm
-  }
-
-  .degree{
-    font-size:13px;
-    font-weight:700;
-    color:#3d5556;
-    margin-bottom:1.25mm
-  }
-
-  .contact,.address{
-    font-size:11px;
-    color:#58696a;
-    line-height:1.42
-  }
-
-  .clinic{
-    position:absolute;
-    right:4.8mm;
-    top:4.3mm;
-    text-align:right;
-    font-size:18px;
-    font-weight:800;
-    color:#0e766d
-  }
-
-  .date{
-    position:absolute;
-    right:4.8mm;
-    top:11.4mm;
-    font-size:11px;
-    color:#687878
-  }
-
-  .headerRule{
-    position:absolute;
-    left:4.8mm;
-    right:4.8mm;
-    bottom:3mm;
-    height:1px;
-    background:#cbdedd
-  }
-
-  .patientBox{
-    margin:3.1mm 4mm 0;
-    border:1px solid #cfe3e1;
-    border-radius:3.1mm;
-    overflow:hidden
-  }
-
-  .patientTitle{
-    height:6.8mm;
-    background:#eaf9f8;
-    border-bottom:1px solid #cfe3e1;
-    padding:1.55mm 2.7mm;
-    font-size:12px;
-    font-weight:800;
-    color:#0a6663
-  }
-
-  .patientGrid{
-    display:grid;
-    grid-template-columns:1.75fr .55fr .6fr 1fr .95fr;
-    min-height:12.8mm
-  }
-
-  .patientCell{
-    padding:2.05mm 2.3mm;
-    border-right:1px solid #d7e6e5
-  }
-
+  .patientBox{margin-top:3.2mm;border:1px solid #cfe2e1;border-radius:4mm;overflow:hidden}
+  .patientTitle{height:7mm;background:#e8f8f7;border-bottom:1px solid #cfe2e1;padding:1.7mm 3mm;font-size:12px;font-weight:800;color:#0a6663}
+  .patientGrid{display:grid;grid-template-columns:1.75fr .55fr .6fr 1fr .95fr;min-height:13mm}
+  .patientCell{padding:2.2mm 2.4mm;border-right:1px solid #d7e6e5}
   .patientCell:last-child{border-right:0}
+  .pLabel{font-size:9px;color:#687b7c;margin-bottom:1.2mm}
+  .pValue{font-size:12px;font-weight:700;color:#314243;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
-  .pLabel{
-    font-size:9px;
-    color:#6c7c7d;
-    margin-bottom:1.05mm
-  }
-
-  .pValue{
-    font-size:12px;
-    font-weight:700;
-    color:#334445;
-    white-space:nowrap;
-    overflow:hidden;
-    text-overflow:ellipsis
-  }
-
-  .content{
-    display:grid;
-    grid-template-columns:47mm 1fr;
-    column-gap:4mm;
-    margin:2.9mm 4mm 0
-  }
-
-  .sidebar{
-    border-right:1px solid #d3e1df;
-    padding-right:3mm;
-    min-height:187mm
-  }
-
+  .content{display:grid;grid-template-columns:49mm 1fr;column-gap:4mm;margin-top:3mm}
+  .sidebar{border-right:1px solid #d4e1e0;padding-right:3mm;min-height:187mm}
   .main{padding-left:0}
-
-  .sideCard{
-    border:1px solid #cfe3e1;
-    border-radius:3mm;
-    overflow:hidden;
-    margin-bottom:2.9mm;
-    background:#fff
-  }
-
-  .sideHead{
-    background:#eaf9f8;
-    border-bottom:1px solid #cfe3e1;
-    padding:2mm 2.6mm;
-    font-size:12px;
-    font-weight:800;
-    color:#0a6663
-  }
-
-  .sideBody{
-    padding:2.9mm;
-    font-size:11px;
-    line-height:1.5;
-    color:#35494a;
-    min-height:12.5mm
-  }
-
-  .oeBody{min-height:38mm}
-
-  .vitals{
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:2.4mm;
-    margin-top:1.9mm
-  }
-
-  .vital{
-    border:1px solid #dce8e7;
-    border-radius:2.4mm;
-    padding:2.1mm;
-    background:#fff
-  }
-
-  .vital b{
-    display:block;
-    font-size:10px;
-    color:#14706c;
-    margin-bottom:.9mm
-  }
-
+  .sideCard{border:1px solid #cfe2e1;border-radius:3mm;overflow:hidden;margin-bottom:3mm;background:#fff}
+  .sideHead{background:#e8f8f7;border-bottom:1px solid #cfe2e1;padding:2.1mm 2.7mm;font-size:12px;font-weight:800;color:#0a6663}
+  .sideBody{padding:3mm;font-size:11px;line-height:1.55;color:#33494a;min-height:13mm}
+  .oeBody{min-height:39mm}
+  .vitals{display:grid;grid-template-columns:1fr 1fr;gap:2.5mm;margin-top:2mm}
+  .vital{border:1px solid #dce8e7;border-radius:2.5mm;padding:2.2mm;background:#fff}
+  .vital b{display:block;font-size:10px;color:#14706c;margin-bottom:1mm}
   .vital span{font-size:11px;color:#344b4c}
 
-  .rxMark{
-    font-family:Georgia,"Times New Roman",serif;
-    font-size:38px;
-    line-height:1;
-    color:#087e77;
-    font-weight:700;
-    margin:0 0 1mm 0
-  }
-
-  .rxLabel{
-    font-size:12px;
-    color:#6b7778;
-    letter-spacing:.15px;
-    margin-bottom:2mm
-  }
-
-  .medTable{
-    width:100%;
-    border-collapse:collapse;
-    table-layout:fixed;
-    border:1px solid #cbdcda
-  }
-
-  .medTable th{
-    background:#0e766d;
-    color:#fff;
-    font-size:10px;
-    font-weight:800;
-    text-align:left;
-    padding:2.05mm 1.9mm;
-    border-right:1px solid rgba(255,255,255,.28)
-  }
-
+  .rxMark{font-family:Georgia,serif;font-size:38px;line-height:1;color:#087e77;font-weight:700;margin:0 0 1mm 0}
+  .rxLabel{font-size:12px;color:#6a7778;letter-spacing:.2px;margin-bottom:2mm}
+  .medTable{width:100%;border-collapse:collapse;table-layout:fixed;border:1px solid #cbdcda}
+  .medTable th{background:#087e77;color:#fff;font-size:10px;font-weight:800;text-align:left;padding:2.1mm 2mm;border-right:1px solid rgba(255,255,255,.25)}
   .medTable th:last-child{border-right:0}
-
-  .medTable td{
-    font-size:11px;
-    color:#354849;
-    padding:2.25mm 1.9mm;
-    vertical-align:top;
-    border-top:1px solid #d9e5e4;
-    border-right:1px solid #d9e5e4;
-    line-height:1.35
-  }
-
+  .medTable td{font-size:11px;color:#354849;padding:2.3mm 2mm;vertical-align:top;border-top:1px solid #d9e5e4;border-right:1px solid #d9e5e4;line-height:1.35}
   .medTable td:last-child{border-right:0}
-
-  .medTable .num{width:6%;text-align:center}
-  .medTable .medicine{width:53%}
+  .medTable .num{width:8%;text-align:center}
+  .medTable .medicine{width:52%}
   .medTable .freq{width:13%}
   .medTable .food{width:16%}
   .medTable .duration{width:16%}
+  .medName{font-size:12px;font-weight:700;color:#253d3e}
+  .medGeneric{font-size:10px;color:#637374;margin-top:1mm}
+  .rxSign{margin-top:9mm;text-align:right;padding-right:1mm}
+  .signLine{width:40mm;border-top:1px solid #526667;margin-left:auto;padding-top:1.5mm;font-size:11px;font-weight:700;color:#4b5b5c}
+  .signDegree{font-size:10px;color:#596a6b;margin-top:.7mm}
 
-  .medName{
-    font-size:12px;
-    font-weight:700;
-    color:#253d3e
-  }
-
-  .medGeneric{
-    font-size:10px;
-    color:#637374;
-    margin-top:1mm
-  }
-
-  .rxSign{
-    margin-top:8.8mm;
-    text-align:right;
-    padding-right:1mm
-  }
-
-  .signLine{
-    width:40mm;
-    border-top:1px solid #526667;
-    margin-left:auto;
-    padding-top:1.45mm;
-    font-size:11px;
-    font-weight:700;
-    color:#4b5b5c
-  }
-
-  .signDegree{
-    font-size:10px;
-    color:#596a6b;
-    margin-top:.65mm
-  }
-
-  .footer{
-    position:absolute;
-    left:13.3mm;
-    right:13.3mm;
-    bottom:6mm;
-    border-top:1px solid #cfe1df;
-    padding-top:2mm;
-    font-size:9px;
-    color:#6a7b7b;
-    display:flex;
-    justify-content:space-between
-  }
-
+  .footer{position:absolute;left:14mm;right:14mm;bottom:6mm;border-top:1px solid #cfe1df;padding-top:2mm;font-size:9px;color:#6a7b7b;display:flex;justify-content:space-between}
   .footer b{color:#16716d}
-
-  .printBtn{
-    position:fixed;
-    right:18px;
-    bottom:18px;
-    border:0;
-    border-radius:8px;
-    background:#087e77;
-    color:#fff;
-    padding:11px 15px;
-    font-weight:700;
-    cursor:pointer;
-    box-shadow:0 2px 8px #0002
-  }
-
-  @media screen{
-    .sheet{box-shadow:0 0 18px #00000012;margin:18px auto}
-    .printBtn{display:block}
-  }
-
-  @media print{
-    .sheet{box-shadow:none;margin:0}
-    .printBtn{display:none!important}
-  }</style>
+  .printBtn{position:fixed;right:18px;bottom:18px;border:0;border-radius:8px;background:#087e77;color:#fff;padding:11px 15px;font-weight:700;cursor:pointer;box-shadow:0 2px 8px #0002}
+  @media screen{.sheet{box-shadow:0 0 18px #00000012;margin:18px auto}.printBtn{display:block}}
+  @media print{.sheet{box-shadow:none;margin:0}.printBtn{display:none!important}}
+</style>
 </head>
 <body>
 <div class="sheet">
@@ -1125,23 +867,78 @@
 
   function renderPrintPage8(p,v){
     const pr=profile8();
-    const phones=[pr.phone1,pr.phone2].filter(Boolean).join(" , ");
-    const meds=v.medicines||[], inv=v.investigations||[];
-    const cc=v.symptoms||"-";
-    const oe=[v.bp?`BP: ${esc8(v.bp)}`:"",v.temperature?`Temp: ${esc8(v.temperature)}`:"",v.weight?`Weight: ${esc8(v.weight)}`:""].filter(Boolean).join(" • ")||"-";
-    return `<div id="v8PrintPage" class="rx-sheet">
-      <div class="rx-header">
-        <div class="rx-doctor"><div class="rx-doctor-name">${esc8(pr.name||"")}</div><div>${esc8(pr.degree||"")}</div><div>${esc8(phones)}</div><div>${esc8(pr.address||"")}</div></div>
-        <div class="rx-clinic"><div class="rx-clinic-name">${esc8(pr.clinic||"")}</div><div>Personal Clinic Management System</div></div>
+    const phones=[pr.phone1,pr.phone2].filter(Boolean).join(", ");
+    const meds=Array.isArray(v.medicines)?v.medicines:[];
+    const inv=Array.isArray(v.investigations)?v.investigations:[];
+    const display=x=>(x===undefined||x===null||String(x).trim()==="")?"-":String(x);
+    const br=x=>esc8(display(x)).replace(/\r?\n/g,"<br>");
+    const dateObj=new Date(v.date||Date.now());
+    const months=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    const dateText=`${dateObj.getDate()} ${months[dateObj.getMonth()]} ${dateObj.getFullYear()}`;
+    const medName=m=>`${display(m.name)}${m.strength?" "+display(m.strength):""}`.trim();
+    const medSub=m=>[m.generic,m.form].filter(x=>x&&String(x).trim()).map(esc8).join("<br>");
+    return `<div id="v8PrintPage" class="ref-sheet">
+      <div class="ref-topbar"></div>
+      <div class="ref-header">
+        <div class="ref-doctor">
+          <div class="ref-doctor-name">${esc8(pr.name||"")}</div>
+          <div class="ref-degree">${esc8(pr.degree||"")}</div>
+          <div class="ref-contact">${esc8(phones)}</div>
+          <div class="ref-address">${esc8(pr.address||"")}</div>
+        </div>
+        <div class="ref-clinic">
+          <div class="ref-clinic-name">${esc8(pr.clinic||"")}</div>
+          <div class="ref-date">Date: ${esc8(dateText)}</div>
+        </div>
+        <div class="ref-header-line"></div>
       </div>
-      <div class="rx-patient"><div><b>Patient:</b> ${esc8(p.name)} &nbsp; <b>ID:</b> ${esc8(p.id)}</div><div><b>Age:</b> ${esc8(p.age||"-")} &nbsp; <b>Gender:</b> ${esc8(p.gender||"-")} &nbsp; <b>Phone:</b> ${esc8(p.phone)}</div><div><b>Date:</b> ${esc8(new Date(v.date).toLocaleString())}</div></div>
-      <div class="rx-columns"><div><div class="rx-label">CC — প্রধান অভিযোগ</div><div class="rx-box">${esc8(cc).replace(/\n/g,"<br>")}</div></div><div><div class="rx-label">OE — পরীক্ষা/পর্যবেক্ষণ</div><div class="rx-box">${esc8(oe)}<br>${v.diagnosis?`Diagnosis: ${esc8(v.diagnosis)}`:""}</div></div></div>
-      <div class="rx-rx">℞</div>
-      ${meds.length?`<table class="rx-table"><thead><tr><th>Medicine</th><th>Frequency</th><th>খাবার</th><th>প্রয়োজন হলে</th><th>Duration</th></tr></thead><tbody>${meds.map(m=>`<tr><td><b>${esc8(m.name||"")} ${esc8(m.strength||"")}</b><br><small>${esc8(m.generic||"")} ${esc8(m.form||"")}</small></td><td>${esc8(m.frequency||"-")}</td><td>${esc8(translateFood8(m.food))}</td><td>${esc8(m.prnInstruction||"-")}</td><td>${esc8(m.duration||"-")}</td></tr>`).join("")}</tbody></table>`:`<div class="rx-box">কোনো ওষুধ দেওয়া হয়নি।</div>`}
-      ${inv.length?`<div class="rx-label">🧪 পরীক্ষা-নিরীক্ষা</div><div class="rx-box">${inv.map(x=>`• ${esc8(x)}`).join("<br>")}</div>`:""}
-      <div class="rx-label">পরামর্শ</div><div class="rx-box">${esc8(v.advice||"-").replace(/\n/g,"<br>")}</div>
-      ${(v.followupDays||v.followupDate)?`<div class="rx-follow">🔁 Follow-up: ${v.followupDays?`<b>${esc8(v.followupDays)} দিন পর</b>`:""}${v.followupDate?` — <b>${esc8(v.followupDate)}</b>`:""}</div>`:""}
-      <div class="rx-sign">${esc8(pr.name||"")}<br>${esc8(pr.degree||"")}</div>
+
+      <div class="ref-patient">
+        <div class="ref-patient-title">PATIENT INFORMATION</div>
+        <div class="ref-patient-grid">
+          <div><span>নাম</span><b>${esc8(display(p.name))}</b></div>
+          <div><span>বয়স</span><b>${esc8(display(p.age))}</b></div>
+          <div><span>লিঙ্গ</span><b>${esc8(display(p.gender))}</b></div>
+          <div><span>মোবাইল</span><b>${esc8(display(p.phone))}</b></div>
+          <div><span>PATIENT ID</span><b>${esc8(display(p.id))}</b></div>
+        </div>
+      </div>
+
+      <div class="ref-content">
+        <aside class="ref-side">
+          <section class="ref-card"><h3>CC – Chief Complaints</h3><div class="ref-card-body">${br(v.symptoms)}</div></section>
+          <section class="ref-card"><h3>O/E – On Examination</h3><div class="ref-oe">
+            <div class="ref-vitals">
+              <div><strong>BP</strong><span>${esc8(display(v.bp))}</span></div>
+              <div><strong>Temp.</strong><span>${esc8(display(v.temperature))}</span></div>
+              <div><strong>Weight</strong><span>${esc8(display(v.weight))}</span></div>
+              <div><strong>Gender</strong><span>${esc8(display(p.gender))}</span></div>
+            </div>
+          </div></section>
+          <section class="ref-card"><h3>Diagnosis</h3><div class="ref-card-body">${br(v.diagnosis)}</div></section>
+          <section class="ref-card"><h3>Investigation</h3><div class="ref-card-body">${inv.length?inv.map(x=>`• ${esc8(x)}`).join("<br>"):"-"}</div></section>
+          <section class="ref-card"><h3>Advice</h3><div class="ref-card-body">${br(v.advice)}</div></section>
+          <section class="ref-card"><h3>Follow-up</h3><div class="ref-card-body">${(v.followupDays||v.followupDate)?`${v.followupDays?`After ${esc8(v.followupDays)} days`:""}${v.followupDate?`${v.followupDays?" — ":""}Date: ${esc8(v.followupDate)}`:""}`:"-"}</div></section>
+        </aside>
+
+        <main class="ref-main">
+          <div class="ref-rx">℞</div>
+          <div class="ref-rx-label">PRESCRIPTION / MEDICINES</div>
+          <table class="ref-med-table">
+            <colgroup><col class="c-num"><col class="c-med"><col class="c-freq"><col class="c-food"><col class="c-duration"></colgroup>
+            <thead><tr><th>#</th><th>Medicine</th><th>Frequency</th><th>Food</th><th>Duration</th></tr></thead>
+            <tbody>${meds.length?meds.map((m,i)=>`<tr>
+              <td class="num">${i+1}</td>
+              <td><div class="ref-med-name">${esc8(medName(m))}</div>${medSub(m)?`<div class="ref-med-sub">${medSub(m)}</div>`:""}${m.prnInstruction?`<div class="ref-med-sub">(${esc8(m.prnInstruction)})</div>`:""}</td>
+              <td>${esc8(display(m.frequency))}</td>
+              <td>${esc8(display(m.food))}</td>
+              <td>${esc8(display(m.duration))}</td>
+            </tr>`).join(""):`<tr><td class="num">1</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>`}</tbody>
+          </table>
+          <div class="ref-signature"><div class="ref-sign-line">${esc8(pr.name||"")}</div><div>${esc8(pr.degree||"")}</div></div>
+        </main>
+      </div>
+      <div class="ref-footer"><span><b>${esc8(pr.clinic||"")}</b> · Prescription</span><span>Patient ID: ${esc8(display(p.id))}</span></div>
     </div>`;
   }
 
@@ -1149,12 +946,59 @@
     const p=(patients||[]).find(x=>x.id===patientId); if(!p){if(typeof toast==="function") toast("Patient পাওয়া যায়নি");return;}
     const v=(p.visits||[]).find(x=>x.id===visitId); if(!v){if(typeof toast==="function") toast("Prescription পাওয়া যায়নি");return;}
     const old=q("v8PrintOverlay"); if(old)old.remove();
+    const oldStyle=q("v8PrintStyle"); if(oldStyle)oldStyle.remove();
     const overlay=document.createElement("div"); overlay.id="v8PrintOverlay";
     overlay.innerHTML=renderPrintPage8(p,v);
     document.body.appendChild(overlay);
-    const style=document.createElement("style"); style.id="v8PrintStyle"; style.textContent=`.rx-sheet{max-width:820px;margin:0 auto;padding:0 0 28px;background:#fff;color:#172033;font-family:Arial,'Noto Sans Bengali',sans-serif}.rx-header{display:grid;grid-template-columns:1fr 1fr;gap:20px;border-bottom:4px solid #2563eb;padding:18px 20px 14px;background:linear-gradient(135deg,#f7fbff,#fff)}.rx-doctor{font-size:12px;line-height:1.65}.rx-doctor-name,.rx-clinic-name{font-size:23px;font-weight:800;color:#174ea6}.rx-clinic{text-align:right;font-size:11px;color:#4b5563;line-height:1.6}.rx-patient{margin:14px 20px;border:1px solid #cfd9e8;border-radius:6px;padding:10px 12px;font-size:12px;background:#fbfdff}.rx-box{border:1px solid #dbe4f0;border-radius:5px;padding:10px;margin:7px 0;background:#fff;min-height:24px}.rx-columns{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:0 20px}.rx-columns>div{min-width:0}.rx-label{font-weight:800;margin-top:12px;color:#174ea6;border-bottom:2px solid #dbeafe;padding-bottom:4px}.rx-rx{font-size:38px;font-weight:900;margin:14px 20px 4px;color:#111827}.rx-table{width:calc(100% - 40px);margin:0 20px;border-collapse:collapse}.rx-table th{background:#eef5ff;color:#174ea6}.rx-table th,.rx-table td{border:1px solid #dbe4f0;padding:8px;text-align:left;font-size:12px;vertical-align:top}.rx-follow{margin:14px 20px;padding:10px 12px;border-left:4px solid #2563eb;background:#f5f9ff}.rx-sign{text-align:right;margin:55px 20px 0;font-weight:700}@media screen{#v8PrintOverlay{position:fixed;inset:0;z-index:20000;background:#fff;overflow:auto}#v8PrintOverlay:before{content:'🖨 Print Preview';display:block;background:#2563eb;color:#fff;padding:12px;font-weight:700;text-align:center}}@media print{body>*:not(#v8PrintOverlay){display:none!important}#v8PrintOverlay{display:block!important;position:static!important;background:#fff!important}.rx-sheet{max-width:none!important;padding:8mm!important}.rx-columns{grid-template-columns:1fr 1fr!important}}@media(max-width:600px){.rx-columns{grid-template-columns:1fr}}`;
+    const style=document.createElement("style"); style.id="v8PrintStyle"; style.textContent=`
+      #v8PrintOverlay{position:fixed;inset:0;z-index:20000;background:#fff;overflow:auto}
+      .ref-sheet{width:210mm;min-height:297mm;margin:18px auto;padding:0 14mm 13mm;position:relative;background:#fff;color:#344849;font-family:Arial,"Noto Sans Bengali","Noto Sans",sans-serif;box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+      .ref-sheet *{box-sizing:border-box}
+      .ref-topbar{height:3mm;background:#07877d}
+      .ref-header{height:31mm;background:#effafa;border:1px solid #d5e8e7;border-top:0;padding:4.5mm 5mm 3.5mm;position:relative}
+      .ref-doctor-name{font-size:25px;line-height:1.05;font-weight:800;color:#075b59;margin:0 0 2mm}
+      .ref-degree{font-size:13px;font-weight:700;color:#345354;margin-bottom:1.4mm}
+      .ref-contact,.ref-address{font-size:11px;color:#506466;line-height:1.45}
+      .ref-clinic{position:absolute;right:5mm;top:4.5mm;text-align:right}
+      .ref-clinic-name{font-size:18px;font-weight:800;color:#07877d}
+      .ref-date{font-size:11px;color:#5a6b6c;margin-top:4px}
+      .ref-header-line{position:absolute;left:5mm;right:5mm;bottom:3mm;height:1px;background:#c7dedd}
+      .ref-patient{margin-top:3.2mm;border:1px solid #cfe2e1;border-radius:4mm;overflow:hidden}
+      .ref-patient-title{height:7mm;background:#e8f8f7;border-bottom:1px solid #cfe2e1;padding:1.7mm 3mm;font-size:12px;font-weight:800;color:#0a6663}
+      .ref-patient-grid{display:grid;grid-template-columns:1.75fr .55fr .6fr 1fr .95fr;min-height:13mm}
+      .ref-patient-grid>div{padding:2.2mm 2.4mm;border-right:1px solid #d7e6e5}
+      .ref-patient-grid>div:last-child{border-right:0}
+      .ref-patient-grid span{display:block;font-size:9px;color:#687b7c;margin-bottom:1.2mm}
+      .ref-patient-grid b{display:block;font-size:12px;font-weight:700;color:#314243;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+      .ref-content{display:grid;grid-template-columns:49mm 1fr;column-gap:4mm;margin-top:3mm}
+      .ref-side{border-right:1px solid #d4e1e0;padding-right:3mm;min-height:187mm}
+      .ref-card{border:1px solid #cfe2e1;border-radius:3mm;overflow:hidden;margin-bottom:3mm;background:#fff}
+      .ref-card h3{margin:0;background:#e8f8f7;border-bottom:1px solid #cfe2e1;padding:2.1mm 2.7mm;font-size:12px;font-weight:800;color:#0a6663}
+      .ref-card-body{padding:3mm;font-size:11px;line-height:1.55;color:#33494a;min-height:13mm}
+      .ref-oe{padding:3mm;min-height:39mm}
+      .ref-vitals{display:grid;grid-template-columns:1fr 1fr;gap:2.5mm;margin-top:2mm}
+      .ref-vitals>div{border:1px solid #dce8e7;border-radius:2.5mm;padding:2.2mm;background:#fff}
+      .ref-vitals strong{display:block;font-size:10px;color:#14706c;margin-bottom:1mm}
+      .ref-vitals span{font-size:11px;color:#344b4c}
+      .ref-main{padding-left:0}
+      .ref-rx{font-family:Georgia,serif;font-size:38px;line-height:1;color:#087e77;font-weight:700;margin:0 0 1mm}
+      .ref-rx-label{font-size:12px;color:#6a7778;letter-spacing:.2px;margin-bottom:2mm}
+      .ref-med-table{width:100%;border-collapse:collapse;table-layout:fixed;border:1px solid #cbdcda}
+      .ref-med-table .c-num{width:8%}.ref-med-table .c-med{width:52%}.ref-med-table .c-freq{width:13%}.ref-med-table .c-food{width:16%}.ref-med-table .c-duration{width:16%}
+      .ref-med-table th{background:#087e77;color:#fff;font-size:10px;font-weight:800;text-align:left;padding:2.1mm 2mm;border-right:1px solid rgba(255,255,255,.25)}
+      .ref-med-table th:last-child{border-right:0}
+      .ref-med-table td{font-size:11px;color:#354849;padding:2.3mm 2mm;vertical-align:top;border-top:1px solid #d9e5e4;border-right:1px solid #d9e5e4;line-height:1.35}
+      .ref-med-table td:last-child{border-right:0}.ref-med-table .num{text-align:center}
+      .ref-med-name{font-size:12px;font-weight:700;color:#253d3e}.ref-med-sub{font-size:10px;color:#637374;margin-top:1mm}
+      .ref-signature{margin-top:9mm;text-align:right;padding-right:1mm;font-size:10px;color:#596a6b}
+      .ref-sign-line{width:40mm;border-top:1px solid #526667;margin-left:auto;padding-top:1.5mm;font-size:11px;font-weight:700;color:#4b5b5c}
+      .ref-footer{position:absolute;left:14mm;right:14mm;bottom:6mm;border-top:1px solid #cfe1df;padding-top:2mm;font-size:9px;color:#6a7b7b;display:flex;justify-content:space-between}
+      .ref-footer b{color:#16716d}
+      #v8PrintOverlay button{position:fixed;right:12px;top:12px;z-index:20001;border:0;border-radius:7px;background:#087e77;color:#fff;padding:9px 12px;font-weight:700}
+      @media print{body>*:not(#v8PrintOverlay){display:none!important}#v8PrintOverlay{position:static!important;overflow:visible!important;background:#fff!important}.ref-sheet{margin:0!important;box-shadow:none!important}.ref-sheet{page-break-after:always}#v8PrintOverlay button{display:none!important}}
+    `;
     document.head.appendChild(style);
-    const close=document.createElement("button"); close.textContent="✕ Close"; close.className="btn secondary"; close.style.cssText="position:fixed;right:12px;top:12px;z-index:20001"; close.onclick=cleanup; overlay.appendChild(close);
+    const close=document.createElement("button"); close.textContent="✕ Close"; close.onclick=cleanup; overlay.appendChild(close);
     function cleanup(){q("v8PrintOverlay")?.remove();q("v8PrintStyle")?.remove();window.removeEventListener("afterprint",cleanup);}
     window.addEventListener("afterprint",cleanup,{once:true});
     setTimeout(()=>window.print(),250);
