@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mariyam Shebaloy • Final Fixed V9</title>
+<title>Mariyam Shebaloy • Final Fixed V6</title>
 <style>
 *{box-sizing:border-box}
 body{margin:0;font-family:Arial,"Noto Sans Bengali",sans-serif;background:#f4f7fb;color:#1f2937}
@@ -298,6 +298,20 @@ hr{border:0;border-top:1px solid #e5e7eb;margin:18px 0}
     <div id="visitMedicines"></div>
 
     <label>Doctor's Advice</label><textarea id="vAdvice"></textarea>
+
+    <div id="visitFollowupStatic" class="v8-section" style="margin-top:16px">
+      <h3>🔁 Follow-up</h3>
+      <div class="v8-follow-grid">
+        <div>
+          <label>কত দিন পর দেখাবেন?</label>
+          <input id="vFollowupDays" type="number" min="0" placeholder="যেমন 5">
+        </div>
+        <div>
+          <label>Follow-up date</label>
+          <input id="vFollowupDate" type="date">
+        </div>
+      </div>
+    </div>
     <button class="btn success" style="margin-top:14px" onclick="saveVisit()">Save Visit & Prescription</button>
   </div>
 </section>
@@ -1784,6 +1798,6 @@ if ("serviceWorker" in navigator) {
   });
 }
 </script>
-  <script src="./v8-patch.js?v=9.0.0"></script>
+  <script src="./v8-patch.js"></script>
 </body>
 </html>

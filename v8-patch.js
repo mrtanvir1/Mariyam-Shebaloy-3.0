@@ -12,8 +12,6 @@
   "use strict";
 
   const INVESTIGATION_SUGGESTIONS = [
-    "CBC",
-    "BC",
     "CBC / Complete Blood Count",
     "FBS",
     "RBS",
@@ -62,8 +60,8 @@
         margin:6px 0;background:#f8fbff}
       .v8-follow-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
       .v8-print-wrap{font-family:Arial,sans-serif;color:#172033;max-width:760px;margin:auto}
-      .v8-print-head{border-bottom:3px solid #2563eb;padding-bottom:12px;margin-bottom:18px}
-      .v8-print-clinic{font-size:25px;font-weight:800;color:#2563eb}
+      .v8-print-head{border-bottom:3px solid #0f766e;padding-bottom:12px;margin-bottom:18px}
+      .v8-print-clinic{font-size:25px;font-weight:800;color:#0f766e}
       .v8-print-doctor{font-size:18px;font-weight:700;margin-top:4px}
       .v8-print-meta{font-size:12px;color:#4b5563;margin-top:4px}
       .v8-print-title{font-size:20px;font-weight:800;margin:16px 0 8px}
@@ -301,7 +299,7 @@
     const marker = q("vAdvice")?.parentElement;
     const wrap = document.createElement("div");
     wrap.id = "v8VisitExtras";
-    wrap.innerHTML = investigationBlock("v") + followupBlock("v");
+    wrap.innerHTML = investigationBlock("v");
     (marker || form.querySelector(".card")).insertBefore(wrap, marker || null);
   }
 
@@ -313,6 +311,10 @@
     ["FollowupDays","FollowupDate"].forEach(s => {
       if (q(prefix+s)) q(prefix+s).value = "";
     });
+    if (prefix === "v") {
+      const f = q("visitFollowupStatic");
+      if (f) f.style.display = "block";
+    }
   }
 
   // Override New Patient save so the initial prescription is not lost.
@@ -863,6 +865,22 @@
     patchPatientReset();
     installV81Fixes();
 
+    // New Visit follow-up is a permanent part of the form, not dynamically mounted.
+    const vf = q("visitFollowupStatic");
+    if (vf) vf.style.display = "block";
+    const vd = q("vFollowupDays");
+    if (vd && !vd.dataset.v8Bound) {
+      vd.dataset.v8Bound = "1";
+      vd.addEventListener("input", function(){
+        const date = q("vFollowupDate");
+        if (date && this.value !== "") {
+          const d = new Date(); d.setHours(0,0,0,0);
+          d.setDate(d.getDate() + Number(this.value));
+          date.value = d.toISOString().slice(0,10);
+        }
+      });
+    }
+
     // Existing V7 New Patient button opens patientForm; extras are now there.
     // Existing V7 Medicine database remains untouched.
     if (typeof renderDashboardStats === "function") renderDashboardStats();
@@ -873,124 +891,4 @@
   } else {
     mount();
   }
-})();
-
-
-/* =========================
-   V9 FINAL FIX PACK
-   - Explicit in-page investigation picker (no mobile keyboard/datalist dependency)
-   - Investigations are stored on every new visit and printed
-   - Prescription print layout follows the supplied reference sheet
-   - Re-runs safely if the PWA restores an old DOM
-   ========================= */
-(function(){
-  "use strict";
-  const Q=id=>document.getElementById(id);
-  const E=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-  const invs=["CBC","BC","FBS","RBS","HbA1c","Serum Creatinine","Blood Urea","Lipid Profile","LFT","Urine R/E","Urine C/S","TSH","FT4","CRP","ESR","Electrolytes","ECG","Chest X-Ray","USG of Whole Abdomen","USG of KUB","Stool R/E"];
-
-  function values(prefix){return [...document.querySelectorAll(`#${prefix}InvestigationSelected [data-investigation]`)].map(x=>x.dataset.investigation).filter(Boolean)}
-  function add(prefix,val){
-    val=String(val||"").trim(); if(!val)return;
-    const box=Q(prefix+"InvestigationSelected"); if(!box)return;
-    if(values(prefix).some(x=>x.toLowerCase()===val.toLowerCase()))return;
-    const d=document.createElement("div"); d.className="v9-inv-chip"; d.dataset.investigation=val;
-    d.innerHTML=`<span>✓ ${E(val)}</span><button type="button" class="v9-x">×</button>`;
-    d.querySelector(".v9-x").onclick=()=>d.remove(); box.appendChild(d);
-  }
-  window.v9OpenInvestigation=function(prefix){
-    Q("v9InvModal")?.remove();
-    const modal=document.createElement("div"); modal.id="v9InvModal";
-    modal.innerHTML=`<div class="v9-inv-dialog">
-      <div class="v9-inv-head"><b>🧪 পরীক্ষা নির্বাচন করুন</b><button type="button" id="v9InvClose">✕</button></div>
-      <input id="v9InvSearch" placeholder="পরীক্ষার নাম লিখে খুঁজুন...">
-      <div id="v9InvList"></div>
-      <div class="v9-custom"><input id="v9InvCustom" placeholder="নিজের পরীক্ষার নাম"><button type="button" id="v9InvCustomBtn">＋ যোগ করুন</button></div>
-    </div>`;
-    document.body.appendChild(modal);
-    const list=Q("v9InvList"), search=Q("v9InvSearch");
-    const render=()=>{const q=(search.value||"").toLowerCase().trim(); const selected=new Set(values(prefix).map(x=>x.toLowerCase()));
-      const arr=invs.filter(x=>!q||x.toLowerCase().includes(q));
-      list.innerHTML=arr.map(x=>`<button type="button" class="v9-inv-option ${selected.has(x.toLowerCase())?"selected":""}" data-v="${E(x)}">${selected.has(x.toLowerCase())?"✓":"＋"} ${E(x)}</button>`).join("")||`<div class="v9-empty">কোনো পরীক্ষা পাওয়া যায়নি</div>`;
-    };
-    list.onclick=e=>{const b=e.target.closest("[data-v]");if(!b)return;add(prefix,b.dataset.v);render();};
-    Q("v9InvClose").onclick=()=>modal.remove();
-    modal.onclick=e=>{if(e.target===modal)modal.remove()};
-    search.oninput=render;
-    Q("v9InvCustomBtn").onclick=()=>{const v=Q("v9InvCustom").value.trim();if(v){add(prefix,v);Q("v9InvCustom").value="";render();}};
-    render(); setTimeout(()=>search.focus(),50);
-  };
-
-  function ensure(prefix, beforeId){
-    if(Q(prefix+"InvestigationUI"))return;
-    const before=Q(beforeId); if(!before)return;
-    const wrap=document.createElement("div"); wrap.id=prefix+"InvestigationUI"; wrap.className="v9-investigation";
-    wrap.innerHTML=`<div class="v9-invest-title"><b>🧪 Investigation / পরীক্ষা-নিরীক্ষা</b><button type="button" class="btn primary" id="${prefix}InvOpen">＋ পরীক্ষা নির্বাচন করুন</button></div>
-      <div id="${prefix}InvestigationSelected" class="v9-inv-selected"><span class="v9-placeholder">কোনো পরীক্ষা নির্বাচন করা হয়নি</span></div>`;
-    before.parentNode.insertBefore(wrap,before);
-    Q(prefix+"InvOpen").onclick=()=>window.v9OpenInvestigation(prefix);
-  }
-  function clear(prefix){Q(prefix+"InvestigationSelected")&&(Q(prefix+"InvestigationSelected").innerHTML='<span class="v9-placeholder">কোনো পরীক্ষা নির্বাচন করা হয়নি</span>')}
-  function get(prefix){return values(prefix)}
-  function hidePlaceholder(prefix){const b=Q(prefix+"InvestigationSelected"); if(b && get(prefix).length) b.querySelector(".v9-placeholder")?.remove()}
-  const oldAdd=window.v8AddInvestigation;
-  // Keep old API working, but render through the new chip list when present.
-  window.v8AddInvestigation=function(prefix){const input=Q(prefix+"InvestigationInput"); const v=input?.value?.trim(); if(v && Q(prefix+"InvestigationSelected")){add(prefix,v);input.value="";hidePlaceholder(prefix);return;} if(oldAdd)oldAdd(prefix);};
-
-  function profile(){return typeof getProfile==="function"?getProfile():window.profile||{}}
-  function printHTML(p,v){
-    const pr=profile(), phones=[pr.phone1,pr.phone2].filter(Boolean).join(" , ");
-    const meds=v.medicines||[], inv=get("v").length?get("v"):(v.investigations||[]);
-    const cc=v.symptoms||"-";
-    const oe=[v.bp&&`BP: ${E(v.bp)}`,v.temperature&&`Temp: ${E(v.temperature)}`,v.weight&&`Weight: ${E(v.weight)}`].filter(Boolean).join(" • ")||"-";
-    return `<div class="rx9">
-      <div class="rx9-top"><div><div class="rx9-doc">${E(pr.name||"")}</div><b>${E(pr.degree||"")}</b><div>${E(phones)}</div><div>${E(pr.address||"")}</div></div><div class="rx9-clinic">${E(pr.clinic||"Mariyam Shebaloy")}<div>Date: ${E(new Date(v.date).toLocaleDateString())}</div></div></div>
-      <div class="rx9-patient-title">PATIENT INFORMATION</div><div class="rx9-patient"><div><span>নাম</span><b>${E(p.name)}</b></div><div><span>বয়স</span><b>${E(p.age||"-")}</b></div><div><span>লিঙ্গ</span><b>${E(p.gender||"-")}</b></div><div><span>মোবাইল</span><b>${E(p.phone||"-")}</b></div><div><span>PATIENT ID</span><b>${E(p.id)}</b></div></div>
-      <div class="rx9-body"><div class="rx9-side">
-        <div class="rx9-box"><h4>CC — Chief Complaints</h4><div>${E(cc).replace(/\n/g,"<br>")}</div></div>
-        <div class="rx9-box"><h4>O/E — On Examination</h4><div class="rx9-vitals"><span>BP<br><b>${E(v.bp||"-")}</b></span><span>Temp.<br><b>${E(v.temperature||"-")}</b></span><span>Weight<br><b>${E(v.weight||"-")}</b></span><span>Gender<br><b>${E(p.gender||"-")}</b></span></div></div>
-        <div class="rx9-box"><h4>Diagnosis</h4><div>${E(v.diagnosis||"-")}</div></div>
-        <div class="rx9-box"><h4>Investigation</h4><div>${inv.length?inv.map(x=>`<div>• ${E(x)}</div>`).join(""):"-"}</div></div>
-        <div class="rx9-box"><h4>Advice</h4><div>${E(v.advice||"-").replace(/\n/g,"<br>")}</div></div>
-        <div class="rx9-box"><h4>Follow-up</h4><div>${E(v.followupDate|| (v.followupDays?`${v.followupDays} days`:"-"))}</div></div>
-      </div><div class="rx9-main"><div class="rx9-rx">℞</div><div class="rx9-sub">PRESCRIPTION / MEDICINES</div>
-        ${meds.length?`<table><thead><tr><th>#</th><th>Medicine</th><th>Frequency</th><th>Food</th><th>Duration</th></tr></thead><tbody>${meds.map((m,i)=>`<tr><td>${i+1}</td><td><b>${E(m.name||"")} ${E(m.strength||"")}</b><br><small>${E(m.generic||"")} ${E(m.form||"")}</small></td><td>${E(m.frequency||"-")}</td><td>${E(m.food||"-")}</td><td>${E(m.duration||"-")}</td></tr>`).join("")}</tbody></table>`:`<div class="rx9-empty">কোনো ওষুধ দেওয়া হয়নি।</div>`}
-        <div class="rx9-sign">${E(pr.name||"")}<br>${E(pr.degree||"")}</div></div></div>
-      <div class="rx9-foot"><span>${E(p.name)} • Prescription</span><span>Patient ID: ${E(p.id)}</span></div>
-    </div>`;
-  }
-  window.printPrescription=function(pid,vid){
-    const p=(patients||[]).find(x=>x.id===pid); if(!p)return; const v=(p.visits||[]).find(x=>x.id===vid);if(!v)return;
-    // For saved visits, use the saved data. The live v-picker is only relevant while editing.
-    const data=Object.assign({},v,{investigations:Array.isArray(v.investigations)?v.investigations:[]});
-    const old=Q("rx9Overlay");old?.remove(); const ov=document.createElement("div");ov.id="rx9Overlay";ov.innerHTML=printHTML(p,data)+`<button id="rx9Close" class="btn secondary">✕ Close</button>`;document.body.appendChild(ov);
-    Q("rx9Close").onclick=()=>ov.remove(); setTimeout(()=>window.print(),150);
-  };
-
-  function hookSave(){
-    const old=window.saveVisit;
-    window.saveVisit=function(){
-      const p=(patients||[]).find(x=>x.id===window.currentVisitPatientId);if(!p){return old&&old()}
-      // Let existing V9/V8 save logic run, then force investigations from the visible picker into the saved visit.
-      const before=p.visits?.length||0; old&&old();
-      const saved=p.visits?.[p.visits.length-1]; if(saved && (p.visits.length>before)) {saved.investigations=get("v"); save(KEY_PATIENTS,patients);}
-    };
-  }
-  function hookStart(){
-    const old=window.startVisit;
-    window.startVisit=function(id){old&&old(id);setTimeout(()=>{ensure("v","vAdvice");clear("v");},30)};
-  }
-  function hookPatient(){
-    const old=window.saveNewPatient;
-    window.saveNewPatient=function(){old&&old();setTimeout(()=>{ensure("p","pAdvice");},30)};
-  }
-  function mount(){
-    // CSS
-    if(!Q("v9Css")){const s=document.createElement("style");s.id="v9Css";s.textContent=`
-      .v9-investigation{margin:16px 0;padding:14px;border:1px solid #dbe4f0;border-radius:14px;background:#fbfdff}.v9-invest-title{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}.v9-inv-selected{margin-top:10px;min-height:42px}.v9-placeholder{color:#9ca3af}.v9-inv-chip{display:flex;justify-content:space-between;align-items:center;padding:9px 11px;margin:6px 0;border:1px solid #bfe3db;border-radius:9px;background:#effaf7}.v9-x{border:0;background:transparent;font-size:20px;cursor:pointer}.v9-inv-dialog{width:min(620px,94vw);max-height:86vh;overflow:auto;background:#fff;border-radius:18px;padding:16px;box-shadow:0 20px 60px #0004}.v9-inv-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}.v9-inv-head button{border:0;background:#eee;border-radius:9px;padding:8px 11px}.v9-inv-option{width:100%;text-align:left;padding:12px;margin:4px 0;border:1px solid #dbe4f0;border-radius:9px;background:#fff}.v9-inv-option.selected{background:#e8f7f3;border-color:#17a689}.v9-custom{display:flex;gap:8px;margin-top:12px}.v9-custom input{flex:1}.v9-empty{text-align:center;padding:18px;color:#777}#v9InvModal{position:fixed;inset:0;background:#0008;z-index:99999;display:flex;align-items:center;justify-content:center;padding:10px}
-      #rx9Overlay{position:fixed;inset:0;z-index:99998;background:#fff;overflow:auto;padding:20px}.rx9{max-width:930px;margin:auto;font-family:Arial,"Noto Sans Bengali",sans-serif;color:#17333a}.rx9-top{border-top:8px solid #087f73;background:#eefafa;padding:18px 24px;display:flex;justify-content:space-between;gap:20px}.rx9-doc{font-size:27px;font-weight:800;color:#006e68}.rx9-clinic{text-align:right;font-size:18px;font-weight:800;color:#00786f}.rx9-patient-title{margin-top:14px;background:#dff5f3;border:1px solid #c4e5e2;padding:8px 12px;font-weight:800}.rx9-patient{display:grid;grid-template-columns:2fr .7fr .8fr 1.2fr 1fr;border:1px solid #d4e1e2}.rx9-patient>div{padding:9px;border-right:1px solid #d4e1e2}.rx9-patient span{display:block;font-size:11px;color:#65777b}.rx9-body{display:grid;grid-template-columns:235px 1fr;gap:18px;margin-top:14px}.rx9-side{border-right:2px solid #d5e4e5;padding-right:14px}.rx9-box{border:1px solid #cbdfe0;border-radius:10px;margin-bottom:10px;overflow:hidden}.rx9-box h4{margin:0;padding:8px 10px;background:#e9f8f7;color:#006e68;font-size:14px}.rx9-box>div{padding:10px;font-size:13px}.rx9-vitals{display:grid!important;grid-template-columns:1fr 1fr;gap:7px}.rx9-vitals span{border:1px solid #dce8e9;border-radius:7px;padding:7px}.rx9-main{padding:0 3px}.rx9-rx{font-size:46px;font-weight:800;color:#006e68}.rx9-sub{font-size:13px;color:#617276;margin-bottom:6px}.rx9-main table{width:100%;border-collapse:collapse}.rx9-main th{background:#007f73;color:#fff}.rx9-main th,.rx9-main td{border:1px solid #cbdfe0;padding:8px;text-align:left;font-size:12px;vertical-align:top}.rx9-sign{text-align:right;margin-top:65px;border-top:1px solid #567;padding-top:5px;font-weight:700;display:inline-block;float:right;min-width:190px}.rx9-foot{clear:both;border-top:1px solid #cbdfe0;margin-top:110px;padding-top:8px;font-size:11px;color:#708084;display:flex;justify-content:space-between}@media(max-width:700px){.rx9-patient{grid-template-columns:1fr 1fr}.rx9-body{grid-template-columns:1fr}.rx9-side{border-right:0;padding-right:0}.rx9-top{flex-direction:column}.rx9-clinic{text-align:left}.rx9-sign{margin-top:40px}}@media print{body>*:not(#rx9Overlay){display:none!important}#rx9Overlay{position:static!important;padding:0!important}#rx9Close{display:none!important}.rx9{max-width:none}.rx9-top{border-top-width:6px}.rx9-foot{margin-top:60px}}
-    `;document.head.appendChild(s)}
-    ensure("p","pAdvice"); ensure("v","vAdvice"); hookSave(); hookStart(); hookPatient();
-  }
-  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>setTimeout(mount,50));else setTimeout(mount,50);
 })();
