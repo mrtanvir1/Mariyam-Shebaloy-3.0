@@ -60,8 +60,8 @@
         margin:6px 0;background:#f8fbff}
       .v8-follow-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
       .v8-print-wrap{font-family:Arial,sans-serif;color:#172033;max-width:760px;margin:auto}
-      .v8-print-head{border-bottom:3px solid #0f766e;padding-bottom:12px;margin-bottom:18px}
-      .v8-print-clinic{font-size:25px;font-weight:800;color:#0f766e}
+      .v8-print-head{border-bottom:3px solid #2563eb;padding-bottom:12px;margin-bottom:18px}
+      .v8-print-clinic{font-size:25px;font-weight:800;color:#2563eb}
       .v8-print-doctor{font-size:18px;font-weight:700;margin-top:4px}
       .v8-print-meta{font-size:12px;color:#4b5563;margin-top:4px}
       .v8-print-title{font-size:20px;font-weight:800;margin:16px 0 8px}
@@ -299,7 +299,7 @@
     const marker = q("vAdvice")?.parentElement;
     const wrap = document.createElement("div");
     wrap.id = "v8VisitExtras";
-    wrap.innerHTML = investigationBlock("v");
+    wrap.innerHTML = investigationBlock("v") + followupBlock("v");
     (marker || form.querySelector(".card")).insertBefore(wrap, marker || null);
   }
 
@@ -311,10 +311,6 @@
     ["FollowupDays","FollowupDate"].forEach(s => {
       if (q(prefix+s)) q(prefix+s).value = "";
     });
-    if (prefix === "v") {
-      const f = q("visitFollowupStatic");
-      if (f) f.style.display = "block";
-    }
   }
 
   // Override New Patient save so the initial prescription is not lost.
@@ -435,95 +431,163 @@
     if (!v) { if(typeof toast==="function") toast("Prescription পাওয়া যায়নি"); return; }
 
     const pr = profile8();
-    const phones = [pr.phone1, pr.phone2].filter(Boolean).join(" , ");
-    const meds = v.medicines || [];
-    const inv = v.investigations || [];
+    const phones = [pr.phone1, pr.phone2].filter(Boolean).join(", ");
+    const meds = Array.isArray(v.medicines) ? v.medicines : [];
+    const inv = Array.isArray(v.investigations) ? v.investigations : [];
 
-    const w = window.open("", "_blank", "noopener,noreferrer");
+    const dateObj = new Date(v.date || Date.now());
+    const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    const printDate = `${dateObj.getDate()} ${months[dateObj.getMonth()]} ${dateObj.getFullYear()}`;
+    const display = value => value === undefined || value === null || String(value).trim()==="" ? "-" : String(value);
+    const nl = value => esc8(display(value)).replace(/\r?\n/g,"<br>");
+    const medicineName = m => `${display(m.name)}${m.strength ? " " + display(m.strength) : ""}`.trim();
+    const medicineSub = m => {
+      const parts = [m.generic, m.form].filter(x => x && String(x).trim());
+      return parts.length ? parts.map(esc8).join("<br>") : "";
+    };
+
+    const w = window.open("", "_blank", "noopener,noreferrer,width=1100,height=1400");
     if (!w) {
       if(typeof toast==="function") toast("Browser popup blocked. Allow popups.");
       return;
     }
 
-    w.document.write(`<!doctype html><html><head><meta charset="utf-8">
-      <title>Prescription - ${esc8(p.name)}</title>
-      <style>
-        body{margin:0;padding:28px;background:#fff;color:#172033;font-family:Arial,sans-serif}
-        .wrap{max-width:780px;margin:auto}
-        .head{border-bottom:3px solid #2563eb;padding-bottom:14px}
-        .clinic{font-size:27px;font-weight:800;color:#2563eb}
-        .doctor{font-size:18px;font-weight:700;margin-top:4px}
-        .meta{font-size:12px;color:#4b5563;margin-top:5px}
-        .patient{margin-top:18px;border:1px solid #dbe4f0;border-radius:10px;padding:12px}
-        .title{font-size:20px;font-weight:800;margin:18px 0 8px}
-        table{width:100%;border-collapse:collapse}
-        th,td{border-bottom:1px solid #e5e7eb;padding:9px;text-align:left;font-size:13px}
-        .box{border:1px solid #dbe4f0;border-radius:10px;padding:12px}
-        .rx{font-size:28px;font-weight:800;margin:18px 0 8px}
-        .follow{border-left:4px solid #2563eb;padding:10px 12px;background:#f5f9ff}
-        .sign{text-align:right;margin-top:55px}
-        @media print{body{padding:0}.no-print{display:none}}
-      </style></head><body>
-      <div class="wrap">
-        <div class="head">
-          <div class="clinic">${esc8(pr.clinic || "")}</div>
-          <div class="doctor">${esc8(pr.name || "")}</div>
-          <div class="meta">${esc8(pr.degree || "")}</div>
-          <div class="meta">${esc8(phones)}</div>
-          <div class="meta">${esc8(pr.address || "")}</div>
+    w.document.write(`<!doctype html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>${esc8(p.name)} - Prescription</title>
+<style>
+  @page{size:A4 portrait;margin:0}
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:#fff}
+  body{font-family:Arial,"Noto Sans Bengali","Noto Sans",sans-serif;color:#193f40;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .sheet{width:210mm;min-height:297mm;margin:0 auto;padding:7mm 14mm 9mm;position:relative;background:#fff}
+
+  /* EXACT visual structure of the supplied reference */
+  .topbar{height:3mm;background:#07877d;margin:0 0 0 0}
+  .header{height:31mm;background:#effafa;border:1px solid #d5e8e7;border-top:0;padding:4.5mm 5mm 3.5mm;position:relative}
+  .doctorName{font-size:25px;line-height:1.05;font-weight:800;letter-spacing:.1px;color:#075b59;margin:0 0 2mm}
+  .degree{font-size:13px;font-weight:700;color:#345354;margin-bottom:1.4mm}
+  .contact,.address{font-size:11px;color:#506466;line-height:1.45}
+  .clinic{position:absolute;right:5mm;top:4.5mm;text-align:right;font-size:18px;font-weight:800;color:#07877d}
+  .date{position:absolute;right:5mm;top:11.5mm;font-size:11px;color:#5a6b6c}
+  .headerRule{position:absolute;left:5mm;right:5mm;bottom:3mm;height:1px;background:#c7dedd}
+
+  .patientBox{margin-top:3.2mm;border:1px solid #cfe2e1;border-radius:4mm;overflow:hidden}
+  .patientTitle{height:7mm;background:#e8f8f7;border-bottom:1px solid #cfe2e1;padding:1.7mm 3mm;font-size:12px;font-weight:800;color:#0a6663}
+  .patientGrid{display:grid;grid-template-columns:1.75fr .55fr .6fr 1fr .95fr;min-height:13mm}
+  .patientCell{padding:2.2mm 2.4mm;border-right:1px solid #d7e6e5}
+  .patientCell:last-child{border-right:0}
+  .pLabel{font-size:9px;color:#687b7c;margin-bottom:1.2mm}
+  .pValue{font-size:12px;font-weight:700;color:#314243;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+  .content{display:grid;grid-template-columns:49mm 1fr;column-gap:4mm;margin-top:3mm}
+  .sidebar{border-right:1px solid #d4e1e0;padding-right:3mm;min-height:187mm}
+  .main{padding-left:0}
+  .sideCard{border:1px solid #cfe2e1;border-radius:3mm;overflow:hidden;margin-bottom:3mm;background:#fff}
+  .sideHead{background:#e8f8f7;border-bottom:1px solid #cfe2e1;padding:2.1mm 2.7mm;font-size:12px;font-weight:800;color:#0a6663}
+  .sideBody{padding:3mm;font-size:11px;line-height:1.55;color:#33494a;min-height:13mm}
+  .oeBody{min-height:39mm}
+  .vitals{display:grid;grid-template-columns:1fr 1fr;gap:2.5mm;margin-top:2mm}
+  .vital{border:1px solid #dce8e7;border-radius:2.5mm;padding:2.2mm;background:#fff}
+  .vital b{display:block;font-size:10px;color:#14706c;margin-bottom:1mm}
+  .vital span{font-size:11px;color:#344b4c}
+
+  .rxMark{font-family:Georgia,serif;font-size:38px;line-height:1;color:#087e77;font-weight:700;margin:0 0 1mm 0}
+  .rxLabel{font-size:12px;color:#6a7778;letter-spacing:.2px;margin-bottom:2mm}
+  .medTable{width:100%;border-collapse:collapse;table-layout:fixed;border:1px solid #cbdcda}
+  .medTable th{background:#087e77;color:#fff;font-size:10px;font-weight:800;text-align:left;padding:2.1mm 2mm;border-right:1px solid rgba(255,255,255,.25)}
+  .medTable th:last-child{border-right:0}
+  .medTable td{font-size:11px;color:#354849;padding:2.3mm 2mm;vertical-align:top;border-top:1px solid #d9e5e4;border-right:1px solid #d9e5e4;line-height:1.35}
+  .medTable td:last-child{border-right:0}
+  .medTable .num{width:8%;text-align:center}
+  .medTable .medicine{width:52%}
+  .medTable .freq{width:13%}
+  .medTable .food{width:16%}
+  .medTable .duration{width:16%}
+  .medName{font-size:12px;font-weight:700;color:#253d3e}
+  .medGeneric{font-size:10px;color:#637374;margin-top:1mm}
+  .rxSign{margin-top:9mm;text-align:right;padding-right:1mm}
+  .signLine{width:40mm;border-top:1px solid #526667;margin-left:auto;padding-top:1.5mm;font-size:11px;font-weight:700;color:#4b5b5c}
+  .signDegree{font-size:10px;color:#596a6b;margin-top:.7mm}
+
+  .footer{position:absolute;left:14mm;right:14mm;bottom:6mm;border-top:1px solid #cfe1df;padding-top:2mm;font-size:9px;color:#6a7b7b;display:flex;justify-content:space-between}
+  .footer b{color:#16716d}
+  .printBtn{position:fixed;right:18px;bottom:18px;border:0;border-radius:8px;background:#087e77;color:#fff;padding:11px 15px;font-weight:700;cursor:pointer;box-shadow:0 2px 8px #0002}
+  @media screen{.sheet{box-shadow:0 0 18px #00000012;margin:18px auto}.printBtn{display:block}}
+  @media print{.sheet{box-shadow:none;margin:0}.printBtn{display:none!important}}
+</style>
+</head>
+<body>
+<div class="sheet">
+  <div class="topbar"></div>
+  <div class="header">
+    <div class="doctorName">${esc8(pr.name || "")}</div>
+    <div class="degree">${esc8(pr.degree || "")}</div>
+    <div class="contact">${esc8(phones)}</div>
+    <div class="address">${esc8(pr.address || "")}</div>
+    <div class="clinic">${esc8(pr.clinic || "")}</div>
+    <div class="date">Date: ${esc8(printDate)}</div>
+    <div class="headerRule"></div>
+  </div>
+
+  <div class="patientBox">
+    <div class="patientTitle">PATIENT INFORMATION</div>
+    <div class="patientGrid">
+      <div class="patientCell"><div class="pLabel">নাম</div><div class="pValue">${esc8(display(p.name))}</div></div>
+      <div class="patientCell"><div class="pLabel">বয়স</div><div class="pValue">${esc8(display(p.age))}</div></div>
+      <div class="patientCell"><div class="pLabel">লিঙ্গ</div><div class="pValue">${esc8(display(p.gender))}</div></div>
+      <div class="patientCell"><div class="pLabel">মোবাইল</div><div class="pValue">${esc8(display(p.phone))}</div></div>
+      <div class="patientCell"><div class="pLabel">PATIENT ID</div><div class="pValue">${esc8(display(p.id))}</div></div>
+    </div>
+  </div>
+
+  <div class="content">
+    <aside class="sidebar">
+      <div class="sideCard"><div class="sideHead">CC – Chief Complaints</div><div class="sideBody">${nl(v.symptoms)}</div></div>
+      <div class="sideCard"><div class="sideHead">O/E – On Examination</div><div class="sideBody oeBody">
+        <div class="vitals">
+          <div class="vital"><b>BP</b><span>${esc8(display(v.bp))}</span></div>
+          <div class="vital"><b>Temp.</b><span>${esc8(display(v.temperature))}</span></div>
+          <div class="vital"><b>Weight</b><span>${esc8(display(v.weight))}</span></div>
+          <div class="vital"><b>Gender</b><span>${esc8(display(p.gender))}</span></div>
         </div>
+      </div></div>
+      <div class="sideCard"><div class="sideHead">Diagnosis</div><div class="sideBody">${nl(v.diagnosis)}</div></div>
+      <div class="sideCard"><div class="sideHead">Investigation</div><div class="sideBody">${inv.length ? inv.map(x=>`• ${esc8(x)}`).join("<br>") : "-"}</div></div>
+      <div class="sideCard"><div class="sideHead">Advice</div><div class="sideBody">${nl(v.advice)}</div></div>
+      <div class="sideCard"><div class="sideHead">Follow-up</div><div class="sideBody">${(v.followupDays || v.followupDate) ? `${v.followupDays ? `After ${esc8(v.followupDays)} days` : ""}${v.followupDate ? `${v.followupDays ? " — " : ""}Date: ${esc8(v.followupDate)}` : ""}` : "-"}</div></div>
+    </aside>
 
-        <div class="patient">
-          <b>Patient:</b> ${esc8(p.name)}
-          &nbsp; <b>ID:</b> ${esc8(p.id)}
-          &nbsp; <b>Age:</b> ${esc8(p.age || "-")}
-          &nbsp; <b>Gender:</b> ${esc8(p.gender || "-")}
-          <br><b>Phone:</b> ${esc8(p.phone)}
-          &nbsp; <b>Date:</b> ${esc8(new Date(v.date).toLocaleString())}
-        </div>
-
-        <div class="title">Clinical Information</div>
-        <div class="box">
-          <b>BP:</b> ${esc8(v.bp || "-")} &nbsp;
-          <b>Temp:</b> ${esc8(v.temperature || "-")} &nbsp;
-          <b>Weight:</b> ${esc8(v.weight || "-")}<br>
-          <b>Symptoms:</b> ${esc8(v.symptoms || "-")}<br>
-          <b>Diagnosis:</b> ${esc8(v.diagnosis || "-")}
-        </div>
-
-        <div class="rx">℞ Prescription</div>
-        ${meds.length ? `<table>
-          <thead><tr><th>Medicine</th><th>Frequency</th><th>Food</th><th>Duration</th></tr></thead>
-          <tbody>${meds.map(m=>`<tr>
-            <td><b>${esc8(m.name || "")} ${esc8(m.strength || "")}</b><br>
-              <small>${esc8(m.generic || "")} ${esc8(m.form || "")}</small></td>
-            <td>${esc8(m.frequency || "-")}</td>
-            <td>${esc8(m.food || "-")}</td>
-            <td>${esc8(m.duration || "-")}</td>
-          </tr>`).join("")}</tbody>
-        </table>` : `<div class="box">No medicine prescribed.</div>`}
-
-        ${inv.length ? `<div class="title">🧪 Investigations</div>
-          <div class="box">${inv.map(x=>`• ${esc8(x)}`).join("<br>")}</div>` : ""}
-
-        <div class="title">Advice</div>
-        <div class="box">${esc8(v.advice || "-").replace(/\n/g,"<br>")}</div>
-
-        ${(v.followupDays || v.followupDate) ? `<div class="title">🔁 Follow-up</div>
-          <div class="follow">
-            ${v.followupDays ? `After <b>${esc8(v.followupDays)} days</b>` : ""}
-            ${v.followupDate ? ` — Date: <b>${esc8(v.followupDate)}</b>` : ""}
-          </div>` : ""}
-
-        <div class="sign">
-          <b>${esc8(pr.name || "")}</b><br>
-          ${esc8(pr.degree || "")}
-        </div>
-
-        <button class="no-print" onclick="window.print()">🖨 Print</button>
+    <main class="main">
+      <div class="rxMark">℞</div>
+      <div class="rxLabel">PRESCRIPTION / MEDICINES</div>
+      <table class="medTable">
+        <thead><tr><th class="num">#</th><th class="medicine">Medicine</th><th class="freq">Frequency</th><th class="food">Food</th><th class="duration">Duration</th></tr></thead>
+        <tbody>
+          ${meds.length ? meds.map((m,i)=>`<tr>
+            <td class="num">${i+1}</td>
+            <td class="medicine"><div class="medName">${esc8(medicineName(m))}</div>${medicineSub(m) ? `<div class="medGeneric">${medicineSub(m)}</div>` : ""}${m.prnInstruction ? `<div class="medGeneric">(${esc8(m.prnInstruction)})</div>` : ""}</td>
+            <td class="freq">${esc8(display(m.frequency))}</td>
+            <td class="food">${esc8(display(m.food))}</td>
+            <td class="duration">${esc8(display(m.duration))}</td>
+          </tr>`).join("") : `<tr><td class="num">1</td><td class="medicine">-</td><td class="freq">-</td><td class="food">-</td><td class="duration">-</td></tr>`}
+        </tbody>
+      </table>
+      <div class="rxSign">
+        <div class="signLine">${esc8(pr.name || "")}</div>
+        <div class="signDegree">${esc8(pr.degree || "")}</div>
       </div>
-      <script>setTimeout(()=>window.print(),250);<\/script>
-      </body></html>`);
+    </main>
+  </div>
+
+  <div class="footer"><span><b>${esc8(pr.clinic || "")}</b> · Prescription</span><span>Patient ID: ${esc8(display(p.id))}</span></div>
+</div>
+<button class="printBtn" onclick="window.print()">🖨 Print</button>
+<script>setTimeout(()=>window.print(),350);<\/script>
+</body></html>`);
     w.document.close();
   };
 
@@ -864,22 +928,6 @@
     patchVisitButtons();
     patchPatientReset();
     installV81Fixes();
-
-    // New Visit follow-up is a permanent part of the form, not dynamically mounted.
-    const vf = q("visitFollowupStatic");
-    if (vf) vf.style.display = "block";
-    const vd = q("vFollowupDays");
-    if (vd && !vd.dataset.v8Bound) {
-      vd.dataset.v8Bound = "1";
-      vd.addEventListener("input", function(){
-        const date = q("vFollowupDate");
-        if (date && this.value !== "") {
-          const d = new Date(); d.setHours(0,0,0,0);
-          d.setDate(d.getDate() + Number(this.value));
-          date.value = d.toISOString().slice(0,10);
-        }
-      });
-    }
 
     // Existing V7 New Patient button opens patientForm; extras are now there.
     // Existing V7 Medicine database remains untouched.
