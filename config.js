@@ -1,4 +1,5 @@
 // Supabase configuration for Mariyam Shebaloy V7.
 // Replace these two values with your Supabase project's public URL and anon key.
-window.MARIYAM_SUPABASE_URL = "https://YOUR-PROJECT.supabase.co";
-window.MARIYAM_SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY";
+const SUPABASE_URL = "https://cvbdtlvaygzdmlabbswr.supabase.co";
+
+const SUPABASE_ANON_KEY = "sb_publishable_eCXswayP6l9PXdUGD-Pqbw_2bfBUW6O";
