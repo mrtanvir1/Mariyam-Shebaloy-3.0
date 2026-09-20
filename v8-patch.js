@@ -620,7 +620,7 @@
         <input class="med-frequency" placeholder="Frequency" value="${esc8(data.frequency||"")}">
         <select class="v8-prn-type">
           <option value="">প্রয়োজনের ধরন</option><option value="prn">প্রয়োজন অনুযায়ী (PRN)</option>
-          <option value="pain">ব্যথা থাকলে খাবেন</option><option value="fever">জ্বর হলে খাবেন</option><option value="custom">নিজের নির্দেশনা</option>
+          <option value="pain">ব্যথা থাকলে খাবেন</option><option value="fever">জ্বর হলে খাবেন</option><option value="no_pain">ব্যথা না থাকলে খাবেন না</option><option value="custom">নিজের নির্দেশনা</option>
         </select>
         <input class="v8-prn-text" placeholder="প্রয়োজন হলে নির্দেশনা" value="${esc8(data.prnInstruction||"")}">
         <select class="med-food">${foodOptions8(data.food||"")}</select>
@@ -642,7 +642,7 @@
         <input class="med-frequency" placeholder="Frequency" value="${esc8(data.frequency||"")}">
         <select class="v8-prn-type">
           <option value="">প্রয়োজনের ধরন</option><option value="prn">প্রয়োজন অনুযায়ী (PRN)</option>
-          <option value="pain">ব্যথা থাকলে খাবেন</option><option value="fever">জ্বর হলে খাবেন</option><option value="custom">নিজের নির্দেশনা</option>
+          <option value="pain">ব্যথা থাকলে খাবেন</option><option value="fever">জ্বর হলে খাবেন</option><option value="no_pain">ব্যথা না থাকলে খাবেন না</option><option value="custom">নিজের নির্দেশনা</option>
         </select>
         <input class="v8-prn-text" placeholder="প্রয়োজন হলে নির্দেশনা" value="${esc8(data.prnInstruction||"")}">
       </div>
@@ -656,17 +656,29 @@
     q("visitMedicines")?.appendChild(row);
   };
 
-  // Initial/new-patient medicine rows also use Bengali food labels.
+  // Initial/new-patient medicine rows also use Bengali food labels + PRN.
+  function setPrnValue8(row, data={}){
+    const type=row.querySelector('.v8-prn-type');
+    const text=row.querySelector('.v8-prn-text');
+    if(type) type.value=data.prnType||'';
+    if(text) text.value=data.prnInstruction||'';
+  }
+
   window.v8AddInitialMedicine = function(prefix, data={}) {
     const box=q(prefix+"Medicines"); if(!box)return;
     const row=document.createElement("div"); row.className="medicine-row"; row.dataset.type="database";
     row.innerHTML=`<div class="medicine-grid">
       <select class="v8-med-select"><option value="">Medicine নির্বাচন করুন</option>${medicineOptions8(data.medicineId||"")}</select>
       <input class="v8-med-frequency" placeholder="Frequency" value="${esc8(data.frequency||"")}">
+      <select class="v8-prn-type">
+        <option value="">প্রয়োজনের ধরন</option><option value="prn">প্রয়োজন অনুযায়ী (PRN)</option>
+        <option value="pain">ব্যথা থাকলে খাবেন</option><option value="fever">জ্বর হলে খাবেন</option><option value="no_pain">ব্যথা না থাকলে খাবেন না</option><option value="custom">নিজের নির্দেশনা</option>
+      </select>
+      <input class="v8-prn-text" placeholder="প্রয়োজন হলে নির্দেশনা" value="${esc8(data.prnInstruction||"")}">
       <select class="v8-med-food">${foodOptions8(data.food||"")}</select>
       <input class="v8-med-duration" placeholder="Duration" value="${esc8(data.duration||"")}">
     </div><button type="button" class="btn danger" style="margin-top:8px" onclick="this.parentElement.remove()">Remove</button>`;
-    box.appendChild(row);
+    box.appendChild(row); setPrnValue8(row,data);
   };
 
   window.v8AddInitialCustomMedicine = function(prefix, data={}) {
@@ -677,29 +689,46 @@
       <input class="v8-custom-strength" placeholder="Strength" value="${esc8(data.strength||"")}">
       <input class="v8-custom-form" placeholder="Form" value="${esc8(data.form||"")}">
       <input class="v8-med-frequency" placeholder="Frequency" value="${esc8(data.frequency||"")}">
+      <select class="v8-prn-type">
+        <option value="">প্রয়োজনের ধরন</option><option value="prn">প্রয়োজন অনুযায়ী (PRN)</option>
+        <option value="pain">ব্যথা থাকলে খাবেন</option><option value="fever">জ্বর হলে খাবেন</option><option value="no_pain">ব্যথা না থাকলে খাবেন না</option><option value="custom">নিজের নির্দেশনা</option>
+      </select>
+      <input class="v8-prn-text" placeholder="প্রয়োজন হলে নির্দেশনা" value="${esc8(data.prnInstruction||"")}">
     </div><div class="medicine-grid" style="margin-top:8px">
       <select class="v8-med-food">${foodOptions8(data.food||"")}</select>
-      <input class="v8-med-duration" placeholder="Duration" value="${esc8(data.duration||"")}">
+      <input class="v8-med-duration" placeholder="Duration" value="${esc8(data.duration||"")}"><div></div><div></div>
     </div><button type="button" class="btn danger" style="margin-top:8px" onclick="this.parentElement.remove()">Remove</button>`;
-    box.appendChild(row);
+    box.appendChild(row); setPrnValue8(row,data);
   };
 
   function installInvestigationPicker8(){
-    if(q("v8InvestigationModal")) return;
     ["p","v"].forEach(prefix=>{
       const input=q(prefix+"InvestigationInput");
       if(!input)return;
       input.removeAttribute("list");
       input.readOnly=true;
-      input.placeholder="পরীক্ষা নির্বাচন করতে এখানে চাপুন";
-      input.onclick=()=>openInvestigationModal8(prefix);
+      input.setAttribute("inputmode","none");
+      input.setAttribute("autocomplete","off");
+      input.setAttribute("onfocus","this.blur();");
+      input.style.display="none";
+      let btn=q(prefix+"InvestigationPickerBtn");
+      if(!btn){
+        btn=document.createElement("button");
+        btn.id=prefix+"InvestigationPickerBtn";
+        btn.type="button";
+        btn.className="btn secondary";
+        btn.style.cssText="width:100%;text-align:left;margin:6px 0";
+        btn.textContent="🧪 পরীক্ষা নির্বাচন করুন (CBC, RBC, FBS...)";
+        btn.onclick=(e)=>{e.preventDefault();e.stopPropagation();openInvestigationModal8(prefix);};
+        input.insertAdjacentElement("afterend",btn);
+      }
     });
   }
 
   window.openInvestigationModal8=function(prefix){
     const old=q("v8InvestigationModal"); if(old)old.remove();
     const modal=document.createElement("div"); modal.id="v8InvestigationModal";
-    modal.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,.48);z-index:10000;display:flex;align-items:flex-end;justify-content:center;padding:12px";
+    modal.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,.48);z-index:10000;display:flex;align-items:center;justify-content:center;padding:12px;touch-action:none";
     modal.innerHTML=`<div style="background:#fff;width:100%;max-width:620px;max-height:82vh;border-radius:18px;padding:16px;overflow:auto;box-shadow:0 15px 50px #0005">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><h3 style="margin:0">🧪 পরীক্ষা নির্বাচন করুন</h3><button class="btn secondary" type="button" id="v8InvClose">✕</button></div>
       <p class="small">CBC, RBC, FBS ইত্যাদি নির্বাচন করুন। চাইলে নিজের পরীক্ষার নামও যোগ করতে পারবেন।</p>
@@ -732,15 +761,21 @@
     const pr=profile8();
     const phones=[pr.phone1,pr.phone2].filter(Boolean).join(" , ");
     const meds=v.medicines||[], inv=v.investigations||[];
-    return `<div id="v8PrintPage" style="background:#fff;color:#172033;max-width:780px;margin:0 auto;padding:24px;font-family:Arial,'Noto Sans Bengali',sans-serif">
-      <div style="border-bottom:3px solid #2563eb;padding-bottom:14px"><div style="font-size:27px;font-weight:800;color:#2563eb">${esc8(pr.clinic||"")}</div><div style="font-size:18px;font-weight:700">${esc8(pr.name||"")}</div><div style="font-size:12px;color:#4b5563">${esc8(pr.degree||"")}</div><div style="font-size:12px;color:#4b5563">${esc8(phones)}</div><div style="font-size:12px;color:#4b5563">${esc8(pr.address||"")}</div></div>
-      <div style="margin-top:18px;border:1px solid #dbe4f0;border-radius:10px;padding:12px"><b>রোগী:</b> ${esc8(p.name)} &nbsp; <b>ID:</b> ${esc8(p.id)} &nbsp; <b>বয়স:</b> ${esc8(p.age||"-")} &nbsp; <b>লিঙ্গ:</b> ${esc8(p.gender||"-")}<br><b>ফোন:</b> ${esc8(p.phone)} &nbsp; <b>তারিখ:</b> ${esc8(new Date(v.date).toLocaleString())}</div>
-      <h3>Clinical Information</h3><div style="border:1px solid #dbe4f0;border-radius:10px;padding:12px"><b>BP:</b> ${esc8(v.bp||"-")} &nbsp; <b>Temp:</b> ${esc8(v.temperature||"-")} &nbsp; <b>Weight:</b> ${esc8(v.weight||"-")}<br><b>Symptoms:</b> ${esc8(v.symptoms||"-")}<br><b>Diagnosis:</b> ${esc8(v.diagnosis||"-")}</div>
-      <h2>℞ Prescription</h2>${meds.length?`<table style="width:100%;border-collapse:collapse"><thead><tr><th style="text-align:left;border-bottom:1px solid #ddd;padding:8px">Medicine</th><th style="text-align:left;border-bottom:1px solid #ddd;padding:8px">Frequency</th><th style="text-align:left;border-bottom:1px solid #ddd;padding:8px">খাবার</th><th style="text-align:left;border-bottom:1px solid #ddd;padding:8px">প্রয়োজন হলে</th><th style="text-align:left;border-bottom:1px solid #ddd;padding:8px">Duration</th></tr></thead><tbody>${meds.map(m=>`<tr><td style="border-bottom:1px solid #eee;padding:8px"><b>${esc8(m.name||"")} ${esc8(m.strength||"")}</b><br><small>${esc8(m.generic||"")} ${esc8(m.form||"")}</small></td><td style="border-bottom:1px solid #eee;padding:8px">${esc8(m.frequency||"-")}</td><td style="border-bottom:1px solid #eee;padding:8px">${esc8(translateFood8(m.food))}</td><td style="border-bottom:1px solid #eee;padding:8px">${esc8(m.prnInstruction||"-")}</td><td style="border-bottom:1px solid #eee;padding:8px">${esc8(m.duration||"-")}</td></tr>`).join("")}</tbody></table>`:`<div style="border:1px solid #dbe4f0;padding:12px">কোনো ওষুধ দেওয়া হয়নি।</div>`}
-      ${inv.length?`<h3>🧪 পরীক্ষা-নিরীক্ষা</h3><div style="border:1px solid #dbe4f0;border-radius:10px;padding:12px">${inv.map(x=>`• ${esc8(x)}`).join("<br>")}</div>`:""}
-      <h3>পরামর্শ</h3><div style="border:1px solid #dbe4f0;border-radius:10px;padding:12px">${esc8(v.advice||"-").replace(/\n/g,"<br>")}</div>
-      ${(v.followupDays||v.followupDate)?`<h3>🔁 Follow-up</h3><div style="border-left:4px solid #2563eb;padding:10px;background:#f5f9ff">${v.followupDays?`<b>${esc8(v.followupDays)} দিন পর</b>`:""}${v.followupDate?` — তারিখ: <b>${esc8(v.followupDate)}</b>`:""}</div>`:""}
-      <div style="text-align:right;margin-top:55px"><b>${esc8(pr.name||"")}</b><br>${esc8(pr.degree||"")}</div>
+    const cc=v.symptoms||"-";
+    const oe=[v.bp?`BP: ${esc8(v.bp)}`:"",v.temperature?`Temp: ${esc8(v.temperature)}`:"",v.weight?`Weight: ${esc8(v.weight)}`:""].filter(Boolean).join(" • ")||"-";
+    return `<div id="v8PrintPage" class="rx-sheet">
+      <div class="rx-header">
+        <div class="rx-doctor"><div class="rx-doctor-name">${esc8(pr.name||"")}</div><div>${esc8(pr.degree||"")}</div><div>${esc8(phones)}</div><div>${esc8(pr.address||"")}</div></div>
+        <div class="rx-clinic"><div class="rx-clinic-name">${esc8(pr.clinic||"")}</div><div>Personal Clinic Management System</div></div>
+      </div>
+      <div class="rx-patient"><div><b>Patient:</b> ${esc8(p.name)} &nbsp; <b>ID:</b> ${esc8(p.id)}</div><div><b>Age:</b> ${esc8(p.age||"-")} &nbsp; <b>Gender:</b> ${esc8(p.gender||"-")} &nbsp; <b>Phone:</b> ${esc8(p.phone)}</div><div><b>Date:</b> ${esc8(new Date(v.date).toLocaleString())}</div></div>
+      <div class="rx-columns"><div><div class="rx-label">CC — প্রধান অভিযোগ</div><div class="rx-box">${esc8(cc).replace(/\n/g,"<br>")}</div></div><div><div class="rx-label">OE — পরীক্ষা/পর্যবেক্ষণ</div><div class="rx-box">${esc8(oe)}<br>${v.diagnosis?`Diagnosis: ${esc8(v.diagnosis)}`:""}</div></div></div>
+      <div class="rx-rx">℞</div>
+      ${meds.length?`<table class="rx-table"><thead><tr><th>Medicine</th><th>Frequency</th><th>খাবার</th><th>প্রয়োজন হলে</th><th>Duration</th></tr></thead><tbody>${meds.map(m=>`<tr><td><b>${esc8(m.name||"")} ${esc8(m.strength||"")}</b><br><small>${esc8(m.generic||"")} ${esc8(m.form||"")}</small></td><td>${esc8(m.frequency||"-")}</td><td>${esc8(translateFood8(m.food))}</td><td>${esc8(m.prnInstruction||"-")}</td><td>${esc8(m.duration||"-")}</td></tr>`).join("")}</tbody></table>`:`<div class="rx-box">কোনো ওষুধ দেওয়া হয়নি।</div>`}
+      ${inv.length?`<div class="rx-label">🧪 পরীক্ষা-নিরীক্ষা</div><div class="rx-box">${inv.map(x=>`• ${esc8(x)}`).join("<br>")}</div>`:""}
+      <div class="rx-label">পরামর্শ</div><div class="rx-box">${esc8(v.advice||"-").replace(/\n/g,"<br>")}</div>
+      ${(v.followupDays||v.followupDate)?`<div class="rx-follow">🔁 Follow-up: ${v.followupDays?`<b>${esc8(v.followupDays)} দিন পর</b>`:""}${v.followupDate?` — <b>${esc8(v.followupDate)}</b>`:""}</div>`:""}
+      <div class="rx-sign">${esc8(pr.name||"")}<br>${esc8(pr.degree||"")}</div>
     </div>`;
   }
 
@@ -751,7 +786,7 @@
     const overlay=document.createElement("div"); overlay.id="v8PrintOverlay";
     overlay.innerHTML=renderPrintPage8(p,v);
     document.body.appendChild(overlay);
-    const style=document.createElement("style"); style.id="v8PrintStyle"; style.textContent=`@media print{body>*:not(#v8PrintOverlay){display:none!important}#v8PrintOverlay{display:block!important;position:static!important;background:#fff!important}#v8PrintPage{max-width:none!important;margin:0!important;padding:10mm!important}}@media screen{#v8PrintOverlay{position:fixed;inset:0;z-index:20000;background:#fff;overflow:auto}#v8PrintOverlay:before{content:'🖨 Print Preview';display:block;background:#2563eb;color:#fff;padding:12px;font-weight:700;text-align:center}}`;
+    const style=document.createElement("style"); style.id="v8PrintStyle"; style.textContent=`.rx-sheet{max-width:800px;margin:0 auto;padding:22px;background:#fff;color:#172033;font-family:Arial,'Noto Sans Bengali',sans-serif}.rx-header{display:flex;justify-content:space-between;gap:20px;border-bottom:3px solid #2563eb;padding-bottom:14px}.rx-doctor{font-size:12px;line-height:1.6}.rx-doctor-name,.rx-clinic-name{font-size:22px;font-weight:800;color:#2563eb}.rx-clinic{text-align:right;font-size:11px;color:#4b5563}.rx-patient,.rx-box{border:1px solid #dbe4f0;border-radius:10px;padding:10px;margin:12px 0}.rx-columns{display:grid;grid-template-columns:1fr 1fr;gap:12px}.rx-label{font-weight:800;margin-top:12px;color:#1d4ed8}.rx-rx{font-size:34px;font-weight:900;margin:12px 0 2px}.rx-table{width:100%;border-collapse:collapse}.rx-table th,.rx-table td{border-bottom:1px solid #ddd;padding:8px;text-align:left;font-size:12px}.rx-follow{margin-top:14px;padding:10px;border-left:4px solid #2563eb;background:#f5f9ff}.rx-sign{text-align:right;margin-top:50px;font-weight:700}@media screen{#v8PrintOverlay{position:fixed;inset:0;z-index:20000;background:#fff;overflow:auto}#v8PrintOverlay:before{content:'🖨 Print Preview';display:block;background:#2563eb;color:#fff;padding:12px;font-weight:700;text-align:center}}@media print{body>*:not(#v8PrintOverlay){display:none!important}#v8PrintOverlay{display:block!important;position:static!important;background:#fff!important}.rx-sheet{max-width:none!important;padding:8mm!important}.rx-columns{grid-template-columns:1fr 1fr!important}}@media(max-width:600px){.rx-columns{grid-template-columns:1fr}}`;
     document.head.appendChild(style);
     const close=document.createElement("button"); close.textContent="✕ Close"; close.className="btn secondary"; close.style.cssText="position:fixed;right:12px;top:12px;z-index:20001"; close.onclick=cleanup; overlay.appendChild(close);
     function cleanup(){q("v8PrintOverlay")?.remove();q("v8PrintStyle")?.remove();window.removeEventListener("afterprint",cleanup);}
@@ -764,6 +799,7 @@
     let text=row.querySelector(".v8-prn-text")?.value.trim() || "";
     if(!text && type==="pain") text="ব্যথা থাকলে খাবেন";
     if(!text && type==="fever") text="জ্বর হলে খাবেন";
+    if(!text && type==="no_pain") text="ব্যথা না থাকলে খাবেন না";
     if(!text && type==="prn") text="প্রয়োজন অনুযায়ী";
     return {prnType:type,prnInstruction:text};
   }
@@ -785,6 +821,7 @@
 
   function installV81Fixes(){
     installInvestigationPicker8();
+    if(!window.__v8InvCapture){ window.__v8InvCapture=true; document.addEventListener("pointerdown",function(e){ const el=e.target.closest("#pInvestigationInput,#vInvestigationInput"); if(!el)return; e.preventDefault(); e.stopPropagation(); openInvestigationModal8(el.id[0]); }, true); }
     if(!q("v8PrnStyle")){ const st=document.createElement("style"); st.id="v8PrnStyle"; st.textContent=".v8-prn-text{min-width:0}.v8-prn-type{min-width:190px}"; document.head.appendChild(st); }
     // Make any already-rendered V8 food selects Bengali without changing stored values.
     document.querySelectorAll(".med-food,.v8-med-food").forEach(sel=>{
