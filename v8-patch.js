@@ -1,0 +1,587 @@
+/*
+ Mariyam Shebaloy V8 clinical workflow patch
+ IMPORTANT:
+ 1) Keep your existing V7 index.html.
+ 2) Upload this file beside index.html.
+ 3) Add this line AFTER the existing main inline <script> in index.html:
+    <script src="./v8-patch.js"></script>
+ 4) Do NOT replace your existing dashboard/auth/profile code.
+*/
+
+(function () {
+  "use strict";
+
+  const INVESTIGATION_SUGGESTIONS = [
+    "CBC / Complete Blood Count",
+    "FBS",
+    "RBS",
+    "HbA1c",
+    "Serum Creatinine",
+    "Blood Urea",
+    "Lipid Profile",
+    "LFT",
+    "Urine R/E",
+    "Urine C/S",
+    "TSH",
+    "FT4",
+    "CRP",
+    "ESR",
+    "Electrolytes",
+    "ECG",
+    "Chest X-Ray",
+    "USG of Whole Abdomen",
+    "USG of KUB",
+    "Stool R/E"
+  ];
+
+  function q(id) { return document.getElementById(id); }
+  function esc8(v) {
+    return String(v ?? "").replace(/[&<>"']/g, c => ({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+    }[c]));
+  }
+  function profile8() {
+    return (typeof getProfile === "function")
+      ? getProfile()
+      : (window.profile || {});
+  }
+
+  function addCss() {
+    if (q("v8PatchCss")) return;
+    const s = document.createElement("style");
+    s.id = "v8PatchCss";
+    s.textContent = `
+      .v8-section{margin-top:16px}
+      .v8-invest-row{display:flex;gap:8px;align-items:center;margin:8px 0}
+      .v8-invest-row input{flex:1}
+      .v8-selected{margin-top:8px}
+      .v8-chip{display:flex;justify-content:space-between;align-items:center;
+        padding:9px 11px;border:1px solid #dbe4f0;border-radius:10px;
+        margin:6px 0;background:#f8fbff}
+      .v8-follow-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+      .v8-print-wrap{font-family:Arial,sans-serif;color:#172033;max-width:760px;margin:auto}
+      .v8-print-head{border-bottom:3px solid #2563eb;padding-bottom:12px;margin-bottom:18px}
+      .v8-print-clinic{font-size:25px;font-weight:800;color:#2563eb}
+      .v8-print-doctor{font-size:18px;font-weight:700;margin-top:4px}
+      .v8-print-meta{font-size:12px;color:#4b5563;margin-top:4px}
+      .v8-print-title{font-size:20px;font-weight:800;margin:16px 0 8px}
+      .v8-print-box{border:1px solid #d9e1ec;border-radius:10px;padding:12px;margin:10px 0}
+      .v8-print-table{width:100%;border-collapse:collapse}
+      .v8-print-table th,.v8-print-table td{border-bottom:1px solid #e5e7eb;padding:8px;text-align:left;font-size:13px}
+      .v8-print-footer{margin-top:35px;text-align:right}
+      @media(max-width:600px){.v8-follow-grid{grid-template-columns:1fr}}
+      @media print{body{background:white!important}.v8-no-print{display:none!important}}
+    `;
+    document.head.appendChild(s);
+  }
+
+  function investigationBlock(prefix) {
+    return `
+      <div class="v8-section">
+        <h3>🧪 Investigations / পরীক্ষা-নিরীক্ষা</h3>
+        <div class="v8-invest-row">
+          <input id="${prefix}InvestigationInput"
+                 list="${prefix}InvestigationList"
+                 placeholder="যেমন CBC, FBS, HbA1c, X-Ray">
+          <button type="button" class="btn secondary"
+                  onclick="v8AddInvestigation('${prefix}')">＋ Add</button>
+        </div>
+        <datalist id="${prefix}InvestigationList">
+          ${INVESTIGATION_SUGGESTIONS.map(x=>`<option value="${esc8(x)}"></option>`).join("")}
+        </datalist>
+        <div id="${prefix}InvestigationSelected" class="v8-selected"></div>
+      </div>
+    `;
+  }
+
+  function followupBlock(prefix) {
+    return `
+      <div class="v8-section">
+        <h3>🔁 Follow-up</h3>
+        <div class="v8-follow-grid">
+          <div>
+            <label>কত দিন পর দেখাবেন?</label>
+            <input id="${prefix}FollowupDays" type="number" min="0"
+                   placeholder="যেমন 5">
+          </div>
+          <div>
+            <label>Follow-up date</label>
+            <input id="${prefix}FollowupDate" type="date">
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function medicineBlock(prefix) {
+    return `
+      <div class="v8-section">
+        <div class="row">
+          <h3>💊 Medicines</h3>
+          <div>
+            <button type="button" class="btn secondary"
+              onclick="v8AddInitialMedicine('${prefix}')">＋ Database Medicine</button>
+            <button type="button" class="btn secondary"
+              onclick="v8AddInitialCustomMedicine('${prefix}')">＋ Custom Medicine</button>
+          </div>
+        </div>
+        <div id="${prefix}Medicines"></div>
+      </div>
+    `;
+  }
+
+  function selectedInvestigationValues(prefix) {
+    return [...document.querySelectorAll(`#${prefix}InvestigationSelected [data-investigation]`)]
+      .map(x => x.getAttribute("data-investigation")).filter(Boolean);
+  }
+
+  window.v8AddInvestigation = function(prefix) {
+    const input = q(prefix + "InvestigationInput");
+    if (!input) return;
+    const value = input.value.trim();
+    if (!value) { if (typeof toast === "function") toast("Investigation-এর নাম দিন"); return; }
+    const existing = selectedInvestigationValues(prefix);
+    if (existing.some(x => x.toLowerCase() === value.toLowerCase())) {
+      input.value = "";
+      return;
+    }
+    const box = q(prefix + "InvestigationSelected");
+    const row = document.createElement("div");
+    row.className = "v8-chip";
+    row.dataset.investigation = value;
+    row.innerHTML = `<span>🧪 ${esc8(value)}</span>
+      <button type="button" class="btn danger"
+        onclick="this.parentElement.remove()">Remove</button>`;
+    box.appendChild(row);
+    input.value = "";
+  };
+
+  function medicineOptions8(selected) {
+    const meds = window.medicines || [];
+    return meds.map(m =>
+      `<option value="${esc8(m.id)}" ${m.id === selected ? "selected" : ""}>
+        ${esc8(m.name || "Unnamed")} ${esc8(m.strength || "")}
+      </option>`).join("");
+  }
+
+  window.v8AddInitialMedicine = function(prefix, data = {}) {
+    const box = q(prefix + "Medicines");
+    if (!box) return;
+    const row = document.createElement("div");
+    row.className = "medicine-row";
+    row.dataset.type = "database";
+    row.innerHTML = `
+      <div class="medicine-grid">
+        <select class="v8-med-select">
+          <option value="">Select medicine from database</option>
+          ${medicineOptions8(data.medicineId || "")}
+        </select>
+        <input class="v8-med-frequency" placeholder="Frequency"
+          value="${esc8(data.frequency || "")}">
+        <select class="v8-med-food">
+          <option value="">Food</option>
+          <option>Before food</option><option>After food</option>
+          <option>With food</option><option>Any time</option>
+        </select>
+        <input class="v8-med-duration" placeholder="Duration"
+          value="${esc8(data.duration || "")}">
+      </div>
+      <button type="button" class="btn danger" style="margin-top:8px"
+        onclick="this.parentElement.remove()">Remove</button>`;
+    box.appendChild(row);
+    if (data.food) row.querySelector(".v8-med-food").value = data.food;
+  };
+
+  window.v8AddInitialCustomMedicine = function(prefix, data = {}) {
+    const box = q(prefix + "Medicines");
+    if (!box) return;
+    const row = document.createElement("div");
+    row.className = "medicine-row";
+    row.dataset.type = "custom";
+    row.innerHTML = `
+      <div class="medicine-grid">
+        <input class="v8-custom-name" placeholder="Custom Brand Name"
+          value="${esc8(data.name || "")}">
+        <input class="v8-custom-strength" placeholder="Strength"
+          value="${esc8(data.strength || "")}">
+        <input class="v8-custom-form" placeholder="Form"
+          value="${esc8(data.form || "")}">
+        <input class="v8-med-frequency" placeholder="Frequency"
+          value="${esc8(data.frequency || "")}">
+      </div>
+      <div class="medicine-grid" style="margin-top:8px">
+        <select class="v8-med-food">
+          <option value="">Food</option><option>Before food</option>
+          <option>After food</option><option>With food</option><option>Any time</option>
+        </select>
+        <input class="v8-med-duration" placeholder="Duration"
+          value="${esc8(data.duration || "")}">
+      </div>
+      <button type="button" class="btn danger" style="margin-top:8px"
+        onclick="this.parentElement.remove()">Remove</button>`;
+    box.appendChild(row);
+    if (data.food) row.querySelector(".v8-med-food").value = data.food;
+  };
+
+  function collectInitialMeds(prefix) {
+    return [...document.querySelectorAll(`#${prefix}Medicines .medicine-row`)]
+      .map(row => {
+        if (row.dataset.type === "custom") {
+          const name = row.querySelector(".v8-custom-name")?.value.trim();
+          if (!name) return null;
+          return {
+            medicineId:"CUSTOM", custom:true, name,
+            generic:"",
+            strength:row.querySelector(".v8-custom-strength")?.value.trim() || "",
+            form:row.querySelector(".v8-custom-form")?.value.trim() || "",
+            frequency:row.querySelector(".v8-med-frequency")?.value.trim() || "",
+            food:row.querySelector(".v8-med-food")?.value || "",
+            duration:row.querySelector(".v8-med-duration")?.value.trim() || ""
+          };
+        }
+        const id = row.querySelector(".v8-med-select")?.value;
+        const meds = window.medicines || [];
+        const m = meds.find(x => String(x.id) === String(id));
+        if (!m) return null;
+        return {
+          medicineId:m.id, name:m.name, generic:m.generic || "",
+          strength:m.strength || "", form:m.form || "",
+          frequency:row.querySelector(".v8-med-frequency")?.value.trim() || "",
+          food:row.querySelector(".v8-med-food")?.value || "",
+          duration:row.querySelector(".v8-med-duration")?.value.trim() || ""
+        };
+      }).filter(Boolean);
+  }
+
+  function followupData(prefix) {
+    const days = q(prefix + "FollowupDays")?.value.trim() || "";
+    let date = q(prefix + "FollowupDate")?.value || "";
+    if (days && !date) {
+      const d = new Date();
+      d.setHours(0,0,0,0);
+      d.setDate(d.getDate() + Number(days));
+      date = d.toISOString().slice(0,10);
+      if (q(prefix + "FollowupDate")) q(prefix + "FollowupDate").value = date;
+    }
+    return { followupDays: days ? Number(days) : "", followupDate: date };
+  }
+
+  function mountPatientExtras() {
+    const form = q("patientForm");
+    if (!form || q("v8PatientExtras")) return;
+    const card = form.querySelector(".card");
+    const advice = q("pAdvice");
+    const marker = advice?.parentElement;
+    const wrap = document.createElement("div");
+    wrap.id = "v8PatientExtras";
+    wrap.innerHTML = medicineBlock("p") + investigationBlock("p") + followupBlock("p");
+    (marker || card).insertAdjacentElement("beforebegin", wrap);
+  }
+
+  function mountVisitExtras() {
+    const form = q("visitForm");
+    if (!form || q("v8VisitExtras")) return;
+    const marker = q("vAdvice")?.parentElement;
+    const wrap = document.createElement("div");
+    wrap.id = "v8VisitExtras";
+    wrap.innerHTML = investigationBlock("v") + followupBlock("v");
+    (marker || form.querySelector(".card")).insertBefore(wrap, marker || null);
+  }
+
+  function clearV8(prefix) {
+    const box = q(prefix + "Medicines");
+    if (box) box.innerHTML = "";
+    const inv = q(prefix + "InvestigationSelected");
+    if (inv) inv.innerHTML = "";
+    ["FollowupDays","FollowupDate"].forEach(s => {
+      if (q(prefix+s)) q(prefix+s).value = "";
+    });
+  }
+
+  // Override New Patient save so the initial prescription is not lost.
+  window.saveNewPatient = function() {
+    const name = q("pName")?.value.trim();
+    const phone = q("pPhone")?.value.trim();
+    if (!name || !phone) {
+      if (typeof toast === "function") toast("নাম ও ফোন নম্বর দিন");
+      return;
+    }
+
+    const firstVisit = {
+      id: typeof uid === "function" ? uid("V-") : ("V-"+Date.now()),
+      date: new Date().toISOString(),
+      bp:q("pBP")?.value.trim() || "",
+      temperature:q("pTemp")?.value.trim() || "",
+      weight:q("pWeight")?.value.trim() || "",
+      symptoms:q("pSymptoms")?.value.trim() || "",
+      diagnosis:q("pDiagnosis")?.value.trim() || "",
+      medicines:collectInitialMeds("p"),
+      investigations:selectedInvestigationValues("p"),
+      advice:q("pAdvice")?.value.trim() || "",
+      ...followupData("p")
+    };
+
+    const patient = {
+      id:q("pId")?.value || (typeof nextPatientId === "function" ? nextPatientId() : "P-"+Date.now()),
+      name, phone,
+      age:q("pAge")?.value || "",
+      gender:q("pGender")?.value || "",
+      address:q("pAddress")?.value.trim() || "",
+      createdAt:new Date().toISOString(),
+      visits:[]
+    };
+
+    const meaningful = firstVisit.bp || firstVisit.temperature ||
+      firstVisit.weight || firstVisit.symptoms || firstVisit.diagnosis ||
+      firstVisit.medicines.length || firstVisit.investigations.length ||
+      firstVisit.advice || firstVisit.followupDays || firstVisit.followupDate;
+
+    if (meaningful) patient.visits.push(firstVisit);
+
+    window.patients.push(patient);
+    save(KEY_PATIENTS, window.patients);
+
+    window.lastSavedPrescription = {patientId:patient.id, visitId:firstVisit.id};
+
+    if (typeof toast === "function") toast("Patient + first prescription saved");
+    if (typeof resetPatientFormMode === "function") resetPatientFormMode();
+    if (typeof openPatient === "function") openPatient(patient.id);
+    if (typeof renderDashboardStats === "function") renderDashboardStats();
+  };
+
+  // Override New Visit initialization.
+  window.startVisit = function(id) {
+    const p = (window.patients || []).find(x => x.id === id);
+    if (!p) return;
+    window.currentVisitPatientId = id;
+
+    if (q("visitPatientInfo")) {
+      q("visitPatientInfo").innerHTML =
+        `<div class="list-item"><b>${esc8(p.name)}</b>
+        <span class="badge">${esc8(p.id)}</span>
+        <div class="small">${esc8(p.phone)} • Age ${esc8(p.age||"-")}
+        • ${esc8(p.gender||"-")}</div></div>`;
+    }
+
+    ["vBP","vTemp","vWeight","vSymptoms","vDiagnosis","vAdvice"]
+      .forEach(id2 => { if(q(id2)) q(id2).value = ""; });
+
+    const vm = q("visitMedicines");
+    if (vm) vm.innerHTML = "";
+    clearV8("v");
+    if (typeof fillDiseaseList === "function") fillDiseaseList();
+    if (typeof showPage === "function") showPage("visitForm");
+  };
+
+  // Override Save Visit: save only, never auto-print.
+  window.saveVisit = function() {
+    const p = (window.patients || []).find(x => x.id === window.currentVisitPatientId);
+    if (!p) return;
+
+    const medicines = typeof collectVisitMedicines === "function"
+      ? collectVisitMedicines() : [];
+
+    const fd = followupData("v");
+    const visit = {
+      id: typeof uid === "function" ? uid("V-") : ("V-"+Date.now()),
+      date:new Date().toISOString(),
+      bp:q("vBP")?.value.trim() || "",
+      temperature:q("vTemp")?.value.trim() || "",
+      weight:q("vWeight")?.value.trim() || "",
+      symptoms:q("vSymptoms")?.value.trim() || "",
+      diagnosis:q("vDiagnosis")?.value.trim() || "",
+      medicines,
+      investigations:selectedInvestigationValues("v"),
+      advice:q("vAdvice")?.value.trim() || "",
+      ...fd
+    };
+
+    p.visits = Array.isArray(p.visits) ? p.visits : [];
+    p.visits.push(visit);
+    save(KEY_PATIENTS, window.patients);
+
+    window.lastSavedPrescription = {patientId:p.id, visitId:visit.id};
+
+    if (typeof toast === "function")
+      toast("Visit saved — এখন চাইলে Print করুন");
+
+    if (typeof renderDashboardStats === "function") renderDashboardStats();
+    if (typeof openPatient === "function") openPatient(p.id);
+  };
+
+  window.printPrescription = function(patientId, visitId) {
+    const p = (window.patients || []).find(x => x.id === patientId);
+    if (!p) { if(typeof toast==="function") toast("Patient পাওয়া যায়নি"); return; }
+    const v = (p.visits || []).find(x => x.id === visitId);
+    if (!v) { if(typeof toast==="function") toast("Prescription পাওয়া যায়নি"); return; }
+
+    const pr = profile8();
+    const phones = [pr.phone1, pr.phone2].filter(Boolean).join(" , ");
+    const meds = v.medicines || [];
+    const inv = v.investigations || [];
+
+    const w = window.open("", "_blank", "noopener,noreferrer");
+    if (!w) {
+      if(typeof toast==="function") toast("Browser popup blocked. Allow popups.");
+      return;
+    }
+
+    w.document.write(`<!doctype html><html><head><meta charset="utf-8">
+      <title>Prescription - ${esc8(p.name)}</title>
+      <style>
+        body{margin:0;padding:28px;background:#fff;color:#172033;font-family:Arial,sans-serif}
+        .wrap{max-width:780px;margin:auto}
+        .head{border-bottom:3px solid #2563eb;padding-bottom:14px}
+        .clinic{font-size:27px;font-weight:800;color:#2563eb}
+        .doctor{font-size:18px;font-weight:700;margin-top:4px}
+        .meta{font-size:12px;color:#4b5563;margin-top:5px}
+        .patient{margin-top:18px;border:1px solid #dbe4f0;border-radius:10px;padding:12px}
+        .title{font-size:20px;font-weight:800;margin:18px 0 8px}
+        table{width:100%;border-collapse:collapse}
+        th,td{border-bottom:1px solid #e5e7eb;padding:9px;text-align:left;font-size:13px}
+        .box{border:1px solid #dbe4f0;border-radius:10px;padding:12px}
+        .rx{font-size:28px;font-weight:800;margin:18px 0 8px}
+        .follow{border-left:4px solid #2563eb;padding:10px 12px;background:#f5f9ff}
+        .sign{text-align:right;margin-top:55px}
+        @media print{body{padding:0}.no-print{display:none}}
+      </style></head><body>
+      <div class="wrap">
+        <div class="head">
+          <div class="clinic">${esc8(pr.clinic || "")}</div>
+          <div class="doctor">${esc8(pr.name || "")}</div>
+          <div class="meta">${esc8(pr.degree || "")}</div>
+          <div class="meta">${esc8(phones)}</div>
+          <div class="meta">${esc8(pr.address || "")}</div>
+        </div>
+
+        <div class="patient">
+          <b>Patient:</b> ${esc8(p.name)}
+          &nbsp; <b>ID:</b> ${esc8(p.id)}
+          &nbsp; <b>Age:</b> ${esc8(p.age || "-")}
+          &nbsp; <b>Gender:</b> ${esc8(p.gender || "-")}
+          <br><b>Phone:</b> ${esc8(p.phone)}
+          &nbsp; <b>Date:</b> ${esc8(new Date(v.date).toLocaleString())}
+        </div>
+
+        <div class="title">Clinical Information</div>
+        <div class="box">
+          <b>BP:</b> ${esc8(v.bp || "-")} &nbsp;
+          <b>Temp:</b> ${esc8(v.temperature || "-")} &nbsp;
+          <b>Weight:</b> ${esc8(v.weight || "-")}<br>
+          <b>Symptoms:</b> ${esc8(v.symptoms || "-")}<br>
+          <b>Diagnosis:</b> ${esc8(v.diagnosis || "-")}
+        </div>
+
+        <div class="rx">℞ Prescription</div>
+        ${meds.length ? `<table>
+          <thead><tr><th>Medicine</th><th>Frequency</th><th>Food</th><th>Duration</th></tr></thead>
+          <tbody>${meds.map(m=>`<tr>
+            <td><b>${esc8(m.name || "")} ${esc8(m.strength || "")}</b><br>
+              <small>${esc8(m.generic || "")} ${esc8(m.form || "")}</small></td>
+            <td>${esc8(m.frequency || "-")}</td>
+            <td>${esc8(m.food || "-")}</td>
+            <td>${esc8(m.duration || "-")}</td>
+          </tr>`).join("")}</tbody>
+        </table>` : `<div class="box">No medicine prescribed.</div>`}
+
+        ${inv.length ? `<div class="title">🧪 Investigations</div>
+          <div class="box">${inv.map(x=>`• ${esc8(x)}`).join("<br>")}</div>` : ""}
+
+        <div class="title">Advice</div>
+        <div class="box">${esc8(v.advice || "-").replace(/\n/g,"<br>")}</div>
+
+        ${(v.followupDays || v.followupDate) ? `<div class="title">🔁 Follow-up</div>
+          <div class="follow">
+            ${v.followupDays ? `After <b>${esc8(v.followupDays)} days</b>` : ""}
+            ${v.followupDate ? ` — Date: <b>${esc8(v.followupDate)}</b>` : ""}
+          </div>` : ""}
+
+        <div class="sign">
+          <b>${esc8(pr.name || "")}</b><br>
+          ${esc8(pr.degree || "")}
+        </div>
+
+        <button class="no-print" onclick="window.print()">🖨 Print</button>
+      </div>
+      <script>setTimeout(()=>window.print(),250);<\/script>
+      </body></html>`);
+    w.document.close();
+  };
+
+  window.v8PrintLast = function() {
+    const x = window.lastSavedPrescription;
+    if (!x) {
+      if(typeof toast==="function") toast("আগে একটি prescription save করুন");
+      return;
+    }
+    window.printPrescription(x.patientId, x.visitId);
+  };
+
+  function patchVisitButtons() {
+    const form = q("visitForm");
+    if (!form || q("v8PrintLastBtn")) return;
+    const card = form.querySelector(".card");
+    const btn = document.createElement("button");
+    btn.id = "v8PrintLastBtn";
+    btn.type = "button";
+    btn.className = "btn secondary";
+    btn.style.cssText = "margin-top:10px;width:100%";
+    btn.textContent = "🖨 Print Saved Prescription";
+    btn.onclick = v8PrintLast;
+    card.appendChild(btn);
+  }
+
+  function patchPatientReset() {
+    const old = window.clearPatientForm;
+    window.clearPatientForm = function() {
+      if (typeof old === "function") old();
+      clearV8("p");
+    };
+  }
+
+  function renderPrescriptionsV8() {
+    const box = q("prescriptionList");
+    if (!box) return;
+    const all = [];
+    (window.patients || []).forEach(p =>
+      (p.visits || []).forEach(v => all.push({p,v}))
+    );
+    all.sort((a,b)=>new Date(b.v.date)-new Date(a.v.date));
+    if (!all.length) {
+      box.innerHTML = `<div class="empty">No prescriptions yet.</div>`;
+      return;
+    }
+    box.innerHTML = all.map(x => `
+      <div class="list-item">
+        <div class="row">
+          <div><b>${esc8(x.p.name)}</b> <span class="badge">${esc8(x.p.id)}</span>
+          <div class="small">${esc8(new Date(x.v.date).toLocaleString())}</div></div>
+          <button class="btn secondary"
+            onclick="printPrescription('${esc8(x.p.id)}','${esc8(x.v.id)}')">🖨 Print</button>
+        </div>
+        <p><b>Diagnosis:</b> ${esc8(x.v.diagnosis || "-")}</p>
+        <p><b>Medicine:</b> ${esc8((x.v.medicines||[]).length)}</p>
+        <p><b>Investigation:</b> ${esc8((x.v.investigations||[]).length)}</p>
+        <p><b>Follow-up:</b> ${esc8(x.v.followupDate || (x.v.followupDays ? x.v.followupDays+" days" : "-"))}</p>
+      </div>`).join("");
+  }
+  window.renderPrescriptions = renderPrescriptionsV8;
+
+  function mount() {
+    addCss();
+    mountPatientExtras();
+    mountVisitExtras();
+    patchVisitButtons();
+    patchPatientReset();
+
+    // Existing V7 New Patient button opens patientForm; extras are now there.
+    // Existing V7 Medicine database remains untouched.
+    if (typeof renderDashboardStats === "function") renderDashboardStats();
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", mount);
+  } else {
+    mount();
+  }
+})();
