@@ -54,6 +54,7 @@
       .v8-section{margin-top:16px}
       .v8-invest-row{display:flex;gap:8px;align-items:center;margin:8px 0}
       .v8-invest-row input{flex:1}
+      .v8-investigation-open{width:100%;min-height:44px;text-align:left;font-weight:700}
       .v8-selected{margin-top:8px}
       .v8-chip{display:flex;justify-content:space-between;align-items:center;
         padding:9px 11px;border:1px solid #dbe4f0;border-radius:10px;
@@ -386,6 +387,11 @@
     clearV8("v");
     if (typeof fillDiseaseList === "function") fillDiseaseList();
     if (typeof showPage === "function") showPage("visitForm");
+    // Rebuild the investigation picker every time New Visit opens. This is important
+    // for Android Chrome/PWA where the form can be reused without a full page reload.
+    setTimeout(()=>{
+      try { installInvestigationPicker8(); } catch(e) { console.warn("Investigation picker:",e); }
+    },0);
   };
 
   // Override Save Visit: save only, never auto-print.
@@ -424,103 +430,103 @@
     if (typeof openPatient === "function") openPatient(p.id);
   };
 
+  // Prescription print layout: matches the supplied reference (teal clinic header,
+  // patient-information strip, left clinical column, Rx medicine table, investigation
+  // list and signature). It is rendered in the current PWA window to avoid popup blockers.
   window.printPrescription = function(patientId, visitId) {
     const p = (patients || []).find(x => x.id === patientId);
-    if (!p) { if(typeof toast==="function") toast("Patient পাওয়া যায়নি"); return; }
+    if (!p) { if (typeof toast === "function") toast("Patient পাওয়া যায়নি"); return; }
     const v = (p.visits || []).find(x => x.id === visitId);
-    if (!v) { if(typeof toast==="function") toast("Prescription পাওয়া যায়নি"); return; }
+    if (!v) { if (typeof toast === "function") toast("Prescription পাওয়া যায়নি"); return; }
 
     const pr = profile8();
-    const phones = [pr.phone1, pr.phone2].filter(Boolean).join(" , ");
-    const meds = v.medicines || [];
-    const inv = v.investigations || [];
+    const meds = Array.isArray(v.medicines) ? v.medicines : [];
+    const inv = Array.isArray(v.investigations) ? v.investigations : [];
+    const phone = [pr.phone1, pr.phone2].filter(Boolean).join(", ");
+    const food = x => translateFood8(x);
+    const dateText = new Date(v.date).toLocaleDateString(undefined,{day:"2-digit",month:"short",year:"numeric"});
 
-    const w = window.open("", "_blank", "noopener,noreferrer");
-    if (!w) {
-      if(typeof toast==="function") toast("Browser popup blocked. Allow popups.");
-      return;
-    }
+    const old = q("v8PrintOverlay"); if (old) old.remove();
+    const overlay = document.createElement("div");
+    overlay.id = "v8PrintOverlay";
+    overlay.innerHTML = `
+      <div class="rx-reference-sheet">
+        <div class="rx-top-line"></div>
+        <header class="rx-reference-header">
+          <div>
+            <div class="rx-doctor-name">${esc8(pr.name || "")}</div>
+            <div class="rx-doctor-degree">${esc8(pr.degree || "")}</div>
+            <div class="rx-doctor-meta">${esc8(phone)}</div>
+            <div class="rx-doctor-meta">${esc8(pr.address || "")}</div>
+          </div>
+          <div class="rx-clinic-head">
+            <div class="rx-clinic-name">${esc8(pr.clinic || "")}</div>
+            <div class="rx-date">Date: ${esc8(dateText)}</div>
+          </div>
+        </header>
 
-    w.document.write(`<!doctype html><html><head><meta charset="utf-8">
-      <title>Prescription - ${esc8(p.name)}</title>
-      <style>
-        body{margin:0;padding:28px;background:#fff;color:#172033;font-family:Arial,sans-serif}
-        .wrap{max-width:780px;margin:auto}
-        .head{border-bottom:3px solid #2563eb;padding-bottom:14px}
-        .clinic{font-size:27px;font-weight:800;color:#2563eb}
-        .doctor{font-size:18px;font-weight:700;margin-top:4px}
-        .meta{font-size:12px;color:#4b5563;margin-top:5px}
-        .patient{margin-top:18px;border:1px solid #dbe4f0;border-radius:10px;padding:12px}
-        .title{font-size:20px;font-weight:800;margin:18px 0 8px}
-        table{width:100%;border-collapse:collapse}
-        th,td{border-bottom:1px solid #e5e7eb;padding:9px;text-align:left;font-size:13px}
-        .box{border:1px solid #dbe4f0;border-radius:10px;padding:12px}
-        .rx{font-size:28px;font-weight:800;margin:18px 0 8px}
-        .follow{border-left:4px solid #2563eb;padding:10px 12px;background:#f5f9ff}
-        .sign{text-align:right;margin-top:55px}
-        @media print{body{padding:0}.no-print{display:none}}
-      </style></head><body>
-      <div class="wrap">
-        <div class="head">
-          <div class="clinic">${esc8(pr.clinic || "")}</div>
-          <div class="doctor">${esc8(pr.name || "")}</div>
-          <div class="meta">${esc8(pr.degree || "")}</div>
-          <div class="meta">${esc8(phones)}</div>
-          <div class="meta">${esc8(pr.address || "")}</div>
-        </div>
+        <section class="rx-patient-section">
+          <div class="rx-section-title">PATIENT INFORMATION</div>
+          <div class="rx-patient-grid">
+            <div><span>নাম</span><b>${esc8(p.name || "-")}</b></div>
+            <div><span>বয়স</span><b>${esc8(p.age || "-")}</b></div>
+            <div><span>লিঙ্গ</span><b>${esc8(p.gender || "-")}</b></div>
+            <div><span>মোবাইল</span><b>${esc8(p.phone || "-")}</b></div>
+            <div><span>PATIENT ID</span><b>${esc8(p.id || "-")}</b></div>
+          </div>
+        </section>
 
-        <div class="patient">
-          <b>Patient:</b> ${esc8(p.name)}
-          &nbsp; <b>ID:</b> ${esc8(p.id)}
-          &nbsp; <b>Age:</b> ${esc8(p.age || "-")}
-          &nbsp; <b>Gender:</b> ${esc8(p.gender || "-")}
-          <br><b>Phone:</b> ${esc8(p.phone)}
-          &nbsp; <b>Date:</b> ${esc8(new Date(v.date).toLocaleString())}
-        </div>
+        <main class="rx-main-grid">
+          <aside class="rx-sidebar">
+            <div class="rx-side-card"><div class="rx-side-title">CC – Chief Complaints</div><div class="rx-side-body">${esc8(v.symptoms || "-").replace(/\n/g,"<br>")}</div></div>
+            <div class="rx-side-card"><div class="rx-side-title">O/E – On Examination</div><div class="rx-vitals">
+              <div><span>BP</span><b>${esc8(v.bp || "-")}</b></div>
+              <div><span>Temp.</span><b>${esc8(v.temperature || "-")}</b></div>
+              <div><span>Weight</span><b>${esc8(v.weight || "-")}</b></div>
+              <div><span>Gender</span><b>${esc8(p.gender || "-")}</b></div>
+            </div></div>
+            <div class="rx-side-card"><div class="rx-side-title">Diagnosis</div><div class="rx-side-body">${esc8(v.diagnosis || "-")}</div></div>
+            <div class="rx-side-card"><div class="rx-side-title">Investigation</div><div class="rx-side-body">${inv.length ? inv.map(x=>`<div class="rx-invest-item">${esc8(x)}</div>`).join("") : "-"}</div></div>
+            <div class="rx-side-card"><div class="rx-side-title">Advice</div><div class="rx-side-body">${esc8(v.advice || "-").replace(/\n/g,"<br>")}</div></div>
+            <div class="rx-side-card"><div class="rx-side-title">Follow-up</div><div class="rx-side-body">${v.followupDays ? `${esc8(v.followupDays)} days later` : ""}${v.followupDate ? `${v.followupDays ? " — " : ""}${esc8(v.followupDate)}` : ""}${!v.followupDays&&!v.followupDate?"-":""}</div></div>
+          </aside>
 
-        <div class="title">Clinical Information</div>
-        <div class="box">
-          <b>BP:</b> ${esc8(v.bp || "-")} &nbsp;
-          <b>Temp:</b> ${esc8(v.temperature || "-")} &nbsp;
-          <b>Weight:</b> ${esc8(v.weight || "-")}<br>
-          <b>Symptoms:</b> ${esc8(v.symptoms || "-")}<br>
-          <b>Diagnosis:</b> ${esc8(v.diagnosis || "-")}
-        </div>
+          <section class="rx-prescription-area">
+            <div class="rx-symbol">℞</div>
+            <div class="rx-prescription-label">PRESCRIPTION / MEDICINES</div>
+            ${meds.length ? `<table class="rx-medicine-table"><thead><tr><th>#</th><th>Medicine</th><th>Frequency</th><th>Food</th><th>Duration</th></tr></thead><tbody>${meds.map((m,i)=>`<tr><td>${i+1}</td><td><b>${esc8(m.name || "")} ${esc8(m.strength || "")}</b>${m.generic||m.form?`<br><small>${esc8(m.generic || "")} ${esc8(m.form || "")}</small>`:""}${m.prnInstruction?`<br><small class="rx-prn">(${esc8(m.prnInstruction)})</small>`:""}</td><td>${esc8(m.frequency || "-")}</td><td>${esc8(food(m.food))}</td><td>${esc8(m.duration || "-")}</td></tr>`).join("")}</tbody></table>` : `<div class="rx-empty-medicine">No medicine prescribed.</div>`}
+            <div class="rx-signature"><div class="rx-sign-line"></div><b>${esc8(pr.name || "")}</b><br><span>${esc8(pr.degree || "")}</span></div>
+          </section>
+        </main>
+        <footer class="rx-footer"><span>${esc8(p.name || "")} • Prescription</span><span>Patient ID: ${esc8(p.id || "-")}</span></footer>
+      </div>`;
 
-        <div class="rx">℞ Prescription</div>
-        ${meds.length ? `<table>
-          <thead><tr><th>Medicine</th><th>Frequency</th><th>Food</th><th>Duration</th></tr></thead>
-          <tbody>${meds.map(m=>`<tr>
-            <td><b>${esc8(m.name || "")} ${esc8(m.strength || "")}</b><br>
-              <small>${esc8(m.generic || "")} ${esc8(m.form || "")}</small></td>
-            <td>${esc8(m.frequency || "-")}</td>
-            <td>${esc8(m.food || "-")}</td>
-            <td>${esc8(m.duration || "-")}</td>
-          </tr>`).join("")}</tbody>
-        </table>` : `<div class="box">No medicine prescribed.</div>`}
+    document.body.appendChild(overlay);
+    const style = document.createElement("style");
+    style.id = "v8PrintStyle";
+    style.textContent = `
+      #v8PrintOverlay{position:fixed;inset:0;z-index:20000;background:#fff;overflow:auto}
+      .rx-reference-sheet{width:calc(100% - 32px);max-width:980px;min-height:100%;margin:0 auto;background:#fff;color:#18343a;font-family:Arial,'Noto Sans Bengali',sans-serif;box-sizing:border-box}
+      .rx-top-line{height:9px;background:#087f73}
+      .rx-reference-header{display:flex;justify-content:space-between;gap:30px;padding:22px 24px 16px;background:#effbfb;border:1px solid #d3e9e7;border-top:0}
+      .rx-doctor-name,.rx-clinic-name{font-size:29px;font-weight:800;color:#006f69;letter-spacing:.2px}.rx-doctor-degree{font-size:15px;font-weight:700;margin-top:3px}.rx-doctor-meta,.rx-date{font-size:12px;color:#466268;margin-top:3px}.rx-clinic-head{text-align:right}.rx-clinic-name{font-size:20px}.rx-date{font-size:12px;margin-top:8px}
+      .rx-patient-section{margin:14px 24px 0;border:1px solid #cfe5e3;border-radius:12px;overflow:hidden}.rx-section-title,.rx-side-title{font-weight:800;color:#086f69;background:#ecfafa;padding:9px 12px;border-bottom:1px solid #cfe5e3}.rx-patient-grid{display:grid;grid-template-columns:1.6fr .6fr .6fr 1fr .9fr}.rx-patient-grid>div{padding:9px 12px;border-right:1px solid #d7e9e8;min-height:48px;box-sizing:border-box}.rx-patient-grid>div:last-child{border-right:0}.rx-patient-grid span{display:block;font-size:10px;color:#5c777b;margin-bottom:6px}.rx-patient-grid b{font-size:14px;color:#263f44}
+      .rx-main-grid{display:grid;grid-template-columns:235px 1fr;gap:18px;margin:12px 24px 0}.rx-sidebar{border-right:2px solid #d6e8e6;padding-right:16px}.rx-side-card{border:1px solid #cfe5e3;border-radius:11px;overflow:hidden;margin-bottom:10px}.rx-side-title{font-size:13px}.rx-side-body{padding:10px 12px;font-size:12px;line-height:1.55;min-height:24px}.rx-vitals{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:10px}.rx-vitals>div{border:1px solid #d7e9e8;border-radius:8px;padding:7px}.rx-vitals span{display:block;color:#147b75;font-size:10px;font-weight:700}.rx-vitals b{font-size:12px}.rx-invest-item{padding:3px 0;border-bottom:1px dashed #dbe9e8}.rx-invest-item:last-child{border-bottom:0}
+      .rx-prescription-area{min-height:510px;position:relative}.rx-symbol{font-size:43px;font-weight:900;color:#087f73;line-height:1}.rx-prescription-label{font-size:13px;color:#5c777b;margin:0 0 8px}.rx-medicine-table{width:100%;border-collapse:collapse}.rx-medicine-table th{background:#087f73;color:#fff;font-size:12px;text-align:left;padding:9px}.rx-medicine-table td{border:1px solid #d6e4e4;padding:8px;font-size:12px;vertical-align:top}.rx-medicine-table td:first-child,.rx-medicine-table th:first-child{width:34px;text-align:center}.rx-medicine-table small{color:#5e7377}.rx-prn{font-style:italic}.rx-empty-medicine{border:1px solid #d6e4e4;padding:12px}.rx-signature{text-align:right;margin-top:60px;margin-right:14px;font-size:12px}.rx-sign-line{width:190px;border-top:1px solid #455b5f;margin-left:auto;margin-bottom:5px}.rx-signature b{font-size:12px}.rx-footer{border-top:1px solid #cfe5e3;margin:32px 24px 0;padding:8px 0;color:#688084;font-size:10px;display:flex;justify-content:space-between}
+      @media(max-width:700px){.rx-reference-header{flex-direction:column}.rx-clinic-head{text-align:left}.rx-patient-grid{grid-template-columns:1fr 1fr}.rx-patient-grid>div{border-bottom:1px solid #d7e9e8}.rx-main-grid{grid-template-columns:1fr}.rx-sidebar{border-right:0;padding-right:0}.rx-prescription-area{min-height:auto}}
+      @media print{#v8PrintOverlay{position:static;overflow:visible;background:#fff}body>*:not(#v8PrintOverlay){display:none!important}.rx-reference-sheet{width:100%;max-width:none;min-height:0}.rx-reference-header{padding:14px 18px 11px}.rx-patient-section,.rx-main-grid{margin-left:18px;margin-right:18px}.rx-footer{margin-left:18px;margin-right:18px}.rx-sidebar{break-inside:avoid}.rx-medicine-table{break-inside:auto}.rx-medicine-table tr{break-inside:avoid;break-after:auto}}
+    `;
+    document.head.appendChild(style);
 
-        ${inv.length ? `<div class="title">🧪 Investigations</div>
-          <div class="box">${inv.map(x=>`• ${esc8(x)}`).join("<br>")}</div>` : ""}
-
-        <div class="title">Advice</div>
-        <div class="box">${esc8(v.advice || "-").replace(/\n/g,"<br>")}</div>
-
-        ${(v.followupDays || v.followupDate) ? `<div class="title">🔁 Follow-up</div>
-          <div class="follow">
-            ${v.followupDays ? `After <b>${esc8(v.followupDays)} days</b>` : ""}
-            ${v.followupDate ? ` — Date: <b>${esc8(v.followupDate)}</b>` : ""}
-          </div>` : ""}
-
-        <div class="sign">
-          <b>${esc8(pr.name || "")}</b><br>
-          ${esc8(pr.degree || "")}
-        </div>
-
-        <button class="no-print" onclick="window.print()">🖨 Print</button>
-      </div>
-      <script>setTimeout(()=>window.print(),250);<\/script>
-      </body></html>`);
-    w.document.close();
+    const close = document.createElement("button");
+    close.textContent = "✕ Close";
+    close.className = "btn secondary";
+    close.style.cssText = "position:fixed;right:12px;top:12px;z-index:20001";
+    close.onclick = cleanup;
+    overlay.appendChild(close);
+    function cleanup(){ q("v8PrintOverlay")?.remove(); q("v8PrintStyle")?.remove(); window.removeEventListener("afterprint",cleanup); }
+    window.addEventListener("afterprint",cleanup,{once:true});
+    setTimeout(()=>window.print(),250);
   };
 
   window.v8PrintLast = function() {
