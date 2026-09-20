@@ -292,26 +292,22 @@ hr{border:0;border-top:1px solid #e5e7eb;margin:18px 0}
     <input id="vDiagnosis" list="diseaseList" oninput="applyDiseaseTemplate()">
     <datalist id="diseaseList"></datalist>
 
+    <!-- Investigation: permanently present in New Visit -->
+    <div id="v8VisitInvestigationStatic" class="v8-section" style="margin-top:16px">
+      <h3>🧪 Investigations / পরীক্ষা-নিরীক্ষা</h3>
+      <div class="v8-invest-row">
+        <input id="vInvestigationInput" placeholder="যেমন CBC, FBS, HbA1c, X-Ray">
+        <button id="vInvestigationPickerBtn" type="button" class="btn secondary">＋ Investigation</button>
+      </div>
+      <div id="vInvestigationSelected" class="v8-selected"></div>
+    </div>
+
     <hr>
     <div class="row"><h3>Medicines</h3><button class="btn secondary" onclick="addMedicineRow()">＋ Database Medicine</button><button class="btn secondary" onclick="addCustomMedicineRow()">＋ Custom Medicine</button></div>
     <div class="notice">Disease template থাকলে medicine list এখানে আসতে পারে, কিন্তু final prescription আপনি নিজে review/edit করবেন।</div>
     <div id="visitMedicines"></div>
 
     <label>Doctor's Advice</label><textarea id="vAdvice"></textarea>
-
-    <div id="visitFollowupStatic" class="v8-section" style="margin-top:16px">
-      <h3>🔁 Follow-up</h3>
-      <div class="v8-follow-grid">
-        <div>
-          <label>কত দিন পর দেখাবেন?</label>
-          <input id="vFollowupDays" type="number" min="0" placeholder="যেমন 5">
-        </div>
-        <div>
-          <label>Follow-up date</label>
-          <input id="vFollowupDate" type="date">
-        </div>
-      </div>
-    </div>
     <button class="btn success" style="margin-top:14px" onclick="saveVisit()">Save Visit & Prescription</button>
   </div>
 </section>
